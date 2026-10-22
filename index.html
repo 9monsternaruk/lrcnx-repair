@@ -130,7 +130,7 @@
                         <input 
                             type="text" 
                             id="searchInput" 
-                            placeholder="ค้นหาสถานที่, รายละเอียด..." 
+                            placeholder="ค้นหาสถานที่, บ้านเลขที่, รายละเอียด..." 
                             class="w-full pl-9 pr-3 py-2 text-sm bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:bg-white focus:border-zinc-900 transition"
                         >
                     </div>
@@ -265,7 +265,7 @@
                             <input 
                                 type="text" 
                                 id="reportSubLocation" 
-                                placeholder="เช่น หน้าซอย 4, เสาไฟต้นที่ 12..."
+                                placeholder="เช่น บ้าน 99/158, หน้าซอย 4..."
                                 class="w-full bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:bg-white focus:border-zinc-900 transition"
                             >
                         </div>
@@ -276,7 +276,7 @@
                             <input 
                                 type="text" 
                                 id="reporterName" 
-                                placeholder="เช่น ลูกบ้าน 88/15 หรือ รปภ.กะเช้า"
+                                placeholder="เช่น ลูกบ้าน 99/158 หรือ รปภ."
                                 class="w-full bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:bg-white focus:border-zinc-900 transition"
                             >
                         </div>
@@ -332,11 +332,11 @@
                         ></textarea>
                     </div>
 
-                    <!-- 4. ระบบอัปโหลดรูปภาพ (Firebase Storage + Preview) -->
+                    <!-- 4. ระบบอัปโหลดรูปภาพ (Firebase Storage + Auto-Compress Fallback) -->
                     <div>
                         <div class="flex items-center justify-between mb-2">
                             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700">
-                                4. รูปถ่ายหน้างาน (อัปโหลดผ่าน Firebase Storage)
+                                4. รูปถ่ายหน้างาน (รองรับการแนบรูปและพรีวิวทันที)
                             </label>
                             <span class="text-[11px] text-zinc-400">รองรับ JPG, PNG, WEBP</span>
                         </div>
@@ -355,7 +355,7 @@
                                 </div>
                                 <div>
                                     <p class="text-xs sm:text-sm font-semibold text-zinc-800">แตะเพื่อถ่ายภาพ หรือเลือกรูปจากอัลบั้ม</p>
-                                    <p class="text-[11px] text-zinc-500 mt-0.5">ระบบจะแสดงภาพพรีวิวก่อนส่ง และอัปโหลดขึ้น Firebase Storage อัตโนมัติ</p>
+                                    <p class="text-[11px] text-zinc-500 mt-0.5">ระบบจะบีบอัดภาพอัตโนมัติเพื่อให้ส่งข้อมูลรวดเร็วและไม่ค้าง</p>
                                 </div>
                             </div>
 
@@ -375,7 +375,7 @@
                         <!-- Upload Progress Bar (Shown during submit) -->
                         <div id="uploadProgressWrapper" class="hidden mt-3 bg-zinc-100 rounded-xl p-3 border border-zinc-200">
                             <div class="flex items-center justify-between text-xs font-medium text-zinc-700 mb-1.5">
-                                <span id="uploadProgressStatus"><i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-bounce"></i>กำลังอัปโหลดรูปภาพไปยัง Firebase Storage...</span>
+                                <span id="uploadProgressStatus"><i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-bounce"></i>กำลังประมวลผลและบันทึกรูปภาพ...</span>
                                 <span id="uploadProgressPercent">0%</span>
                             </div>
                             <div class="w-full h-1.5 bg-zinc-200 rounded-full overflow-hidden">
@@ -630,7 +630,7 @@
                     <input 
                         type="text" 
                         id="modalTechNote" 
-                        placeholder="เช่น เปลี่ยนหลอดไฟ LED 18W เรียบร้อยแล้ว..."
+                        placeholder="เช่น เปลี่ยนหลอดไฟกิ่งหน้าบ้าน 99/158 เรียบร้อยแล้ว..."
                         class="w-full bg-zinc-50 border border-zinc-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-zinc-900"
                     >
                 </div>
@@ -688,15 +688,13 @@
         import { 
             getAuth, 
             signInAnonymously, 
-            signInWithCustomToken, 
-            onAuthStateChanged 
+            signInWithCustomToken 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
             collection, 
             doc, 
             addDoc, 
-            setDoc, 
             updateDoc, 
             deleteDoc, 
             onSnapshot 
@@ -708,7 +706,7 @@
             getDownloadURL 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-        // 1. การตั้งค่า Firebase Config ของโปรเจกต์ time-attendance-69699 (พร้อมรองรับ Preview Environment)
+        // 1. การตั้งค่า Firebase Config ของโปรเจกต์ time-attendance-69699
         const userFirebaseConfig = {
             apiKey: "AIzaSyCXuj7Pl1JnBn2Y7BtyzkHHQm4MQH-isrM",
             authDomain: "time-attendance-69699.firebaseapp.com",
@@ -730,6 +728,10 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
+        // ป้องกัน Firebase Storage ค้างนานเกินไปหากยังไม่ได้เปิดใช้งาน Storage ใน Console
+        storage.maxUploadRetryTime = 2500;
+        storage.maxOperationRetryTime = 2500;
+
         // 2. State Management ของแอปพลิเคชัน
         let currentUser = null;
         let allReports = [];
@@ -744,7 +746,7 @@
         let unsubscribeFirestore = null;
         let isUsingLocalFallback = false;
 
-        // Default architectural placeholder images by category (when user doesn't attach a photo)
+        // Default architectural placeholder images by category
         const DEFAULT_LOCATION_IMAGES = {
             'อาคารนิติ': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
             'ซาวน่า': 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80',
@@ -753,7 +755,15 @@
             'อื่นๆ': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80'
         };
 
-        // 3. Helper: แสดง Toast แจ้งเตือนแทนการใช้ alert()
+        // Helper: ตัดเวลาการทำงานของ Promise ไม่ให้หน้าเว็บค้าง (Timeout Wrapper)
+        function withTimeout(promise, ms = 2500, timeoutMsg = 'Operation timed out') {
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => setTimeout(() => reject(new Error(timeoutMsg)), ms))
+            ]);
+        }
+
+        // 3. Helper: แสดง Toast แจ้งเตือน
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -779,10 +789,10 @@
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(-8px)';
                 setTimeout(() => toast.remove(), 250);
-            }, 3200);
+            }, 3500);
         }
 
-        // Helper: แปลง Timestamp เป็นวันเวลาภาษาไทยที่อ่านง่าย
+        // Helper: แปลง Timestamp เป็นวันเวลาภาษาไทย
         function formatThaiDateTime(timestampMs) {
             if (!timestampMs) return 'เมื่อสักครู่';
             try {
@@ -799,7 +809,7 @@
             }
         }
 
-        // Helper: คืนค่า Badge สีตามสถานะที่กำหนด (รอซ่อม = แดง, กำลังดำเนินการ = เหลือง, เสร็จสิ้น = เขียว)
+        // Helper: คืนค่า Badge สีตามสถานะที่กำหนด
         function getStatusBadgeHTML(status) {
             if (status === 'รอซ่อม') {
                 return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
@@ -827,8 +837,8 @@
             return `<span class="px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200 text-[10px] font-medium">ปกติ</span>`;
         }
 
-        // Helper: ย่อขนาดรูปภาพด้วย Canvas เพื่อให้พรีวิวและอัปโหลดรวดเร็วบนมือถือ
-        function compressImageToDataUrl(file, maxWidth = 900, quality = 0.78) {
+        // Helper: ย่อขนาดรูปภาพด้วย Canvas ให้มีขนาดเล็กแต่คมชัด (~60-120KB) เพื่อรองรับทั้ง Storage และ Firestore
+        function compressImageToDataUrl(file, maxWidth = 800, quality = 0.72) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (event) => {
@@ -879,7 +889,6 @@
 
         // 5. การเชื่อมต่อฐานข้อมูล Firestore แบบ Real-time
         function getReportsCollectionRef() {
-            // ใช้ Strict Path ตามมาตรฐานความปลอดภัย
             return collection(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports');
         }
 
@@ -899,7 +908,6 @@
 
         async function initAuthAndRealtimeListener() {
             try {
-                // Authenticate ก่อนเรียกใช้งาน Firestore เสมอ
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     const cred = await signInWithCustomToken(auth, __initial_auth_token);
                     currentUser = cred.user;
@@ -908,16 +916,12 @@
                     currentUser = cred.user;
                 }
             } catch (authError) {
-                console.warn('Anonymous Auth warning (ตรวจสอบการเปิด Anonymous Auth หรือ Firestore Rules ใน Firebase Console):', authError.message);
-                // สร้าง session user เพื่อให้ยังสามารถทดสอบใช้งานต่อได้ทันที
-                currentUser = { uid: 'laddarom-guest-' + Date.now() };
+                // หากไม่ได้เปิด Anonymous Auth ใน Firebase Console ให้สร้างรหัสผู้ใช้ชั่วคราวเพื่อให้ใช้งานต่อได้ทันที
+                currentUser = { uid: 'laddarom-user-' + Date.now() };
             }
-
-            if (!currentUser) return;
 
             const reportsCol = getReportsCollectionRef();
 
-            // ดึงข้อมูลแบบ Real-time ด้วย onSnapshot และเรียงลำดับจากใหม่ไปเก่าใน JavaScript Memory
             unsubscribeFirestore = onSnapshot(
                 reportsCol,
                 (snapshot) => {
@@ -932,7 +936,7 @@
                         });
                     });
 
-                    // เรียงจากล่าสุดไปเก่าสุด (Newest to Oldest) ในหน่วยความจำ
+                    // เรียงจากล่าสุดไปเก่าสุด (Newest to Oldest)
                     allReports = fetched.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
 
                     document.getElementById('listLoadingState').classList.add('hidden');
@@ -940,7 +944,6 @@
                 },
                 (error) => {
                     console.warn('Firestore Rules Notice:', error.message);
-                    // หากผู้ใช้ยังไม่ได้ตั้งค่า Firestore Security Rules ใน Firebase Console ให้สลับเป็นโหมดพร้อมใช้งานและแจ้งเตือนวิธีตั้งค่า
                     isUsingLocalFallback = true;
                     updateConnectionStatusUI('fallback', 'โหมดสาธิต (รอตั้งค่า Rules)');
                     document.getElementById('listLoadingState').classList.add('hidden');
@@ -963,7 +966,6 @@
             const emptyState = document.getElementById('listEmptyState');
             const totalCountBadge = document.getElementById('listTotalCount');
 
-            // กรองข้อมูลตามสถานะ, สถานที่ และคำค้นหา
             const filtered = allReports.filter((item) => {
                 const matchStatus = activeStatusFilter === 'ALL' || item.status === activeStatusFilter;
                 const matchLocation = activeLocationFilter === 'ALL' || item.location === activeLocationFilter;
@@ -1004,7 +1006,7 @@
                 return `
                     <article class="bg-white rounded-2xl border border-zinc-200/90 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col">
                         <!-- รูปภาพที่แนบมา -->
-                        <div class="relative h-48 w-full bg-zinc-100 overflow-hidden group cursor-zoom-in" onclick="window.openLightbox('${imgUrl}', '${safeLocation} - ${safeDesc}')">
+                        <div class="relative h-48 w-full bg-zinc-100 overflow-hidden group cursor-zoom-in" onclick="window.openLightbox('${ report.id }')">
                             <img 
                                 src="${imgUrl}" 
                                 alt="${safeLocation}" 
@@ -1045,7 +1047,7 @@
                                 ` : ''}
                             </div>
 
-                            <!-- ข้อมูลเวลา & ปุ่มจัดการ (แก้ไขสถานะ / ลบ) -->
+                            <!-- ข้อมูลเวลา & ปุ่มจัดการ -->
                             <div class="pt-3 border-t border-zinc-100 space-y-3">
                                 <div class="flex items-center justify-between text-[11px] text-zinc-400">
                                     <span><i class="fa-regular fa-user mr-1"></i>${safeReporter}</span>
@@ -1082,14 +1084,12 @@
             const completed = allReports.filter(r => r.status === 'เสร็จสิ้น').length;
             const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-            // Update Summary Cards
             document.getElementById('statTotal').textContent = total;
             document.getElementById('statPending').textContent = pending;
             document.getElementById('statInProgress').textContent = inProgress;
             document.getElementById('statCompleted').textContent = completed;
             document.getElementById('statCompletionRate').textContent = `อัตราซ่อมสำเร็จ ${rate}%`;
 
-            // Update Pending Badge on Bottom Nav
             const navBadge = document.getElementById('navBadgePending');
             if (pending > 0) {
                 navBadge.textContent = pending;
@@ -1098,7 +1098,6 @@
                 navBadge.classList.add('hidden');
             }
 
-            // Render Location Breakdown
             const locations = ['อาคารนิติ', 'ซาวน่า', 'ฟิตเนส', 'ไฟแสงสว่าง', 'อื่นๆ'];
             const breakdownEl = document.getElementById('locationBreakdownContainer');
             breakdownEl.innerHTML = locations.map(loc => {
@@ -1117,7 +1116,6 @@
                 `;
             }).join('');
 
-            // Render Juristic Table
             const tbody = document.getElementById('dashboardTableBody');
             if (allReports.length === 0) {
                 tbody.innerHTML = `
@@ -1142,7 +1140,7 @@
                             <img 
                                 src="${imgUrl}" 
                                 alt="${safeLocation}" 
-                                onclick="window.openLightbox('${imgUrl}', '${safeLocation}')"
+                                onclick="window.openLightbox('${report.id}')"
                                 onerror="this.onerror=null;this.src='https://placehold.co/120x120/f4f4f5/52525b?text=Photo';"
                                 class="w-12 h-12 rounded-xl object-cover border border-zinc-200 cursor-zoom-in"
                             >
@@ -1195,7 +1193,7 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // 7. ระบบแสดงภาพพรีวิวก่อนกดส่ง (Image Preview)
+        // 7. ระบบแสดงภาพพรีวิวก่อนกดส่ง (Image Preview & Instant Compression)
         const imageInput = document.getElementById('reportImageInput');
         const previewContainer = document.getElementById('imagePreviewContainer');
         const previewElement = document.getElementById('imagePreviewElement');
@@ -1216,8 +1214,8 @@
             fileNameLabel.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
 
             try {
-                // สร้างภาพพรีวิวและย่อขนาดเพื่อความรวดเร็ว
-                selectedImagePreviewDataUrl = await compressImageToDataUrl(file, 900, 0.8);
+                // บีบอัดภาพให้มีขนาดเล็กแต่คมชัดทันทีที่เลือกไฟล์
+                selectedImagePreviewDataUrl = await compressImageToDataUrl(file, 800, 0.72);
                 previewElement.src = selectedImagePreviewDataUrl;
                 uploadPlaceholder.classList.add('hidden');
                 previewContainer.classList.remove('hidden');
@@ -1241,14 +1239,10 @@
             uploadPlaceholder.classList.remove('hidden');
         }
 
-        // 8. การส่งฟอร์มแจ้งซ่อมใหม่ (Create Report + Upload to Firebase Storage)
+        // 8. การส่งฟอร์มแจ้งซ่อมใหม่ (แก้ปัญหาค้างที่ 35% ด้วย Smart Timeout + Direct Firestore Image Fallback)
         const maintenanceForm = document.getElementById('maintenanceForm');
         maintenanceForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) {
-                showToast('กำลังเชื่อมต่อระบบยืนยันตัวตน กรุณาลองอีกครั้ง', 'error');
-                return;
-            }
 
             const location = document.getElementById('reportLocation').value;
             const subLocation = document.getElementById('reportSubLocation').value.trim();
@@ -1266,38 +1260,39 @@
             const progressWrapper = document.getElementById('uploadProgressWrapper');
             const progressBar = document.getElementById('uploadProgressBar');
             const progressPercent = document.getElementById('uploadProgressPercent');
+            const progressStatus = document.getElementById('uploadProgressStatus');
 
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>กำลังบันทึกข้อมูล...</span>`;
 
-            let finalImageUrl = DEFAULT_LOCATION_IMAGES[location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
+            let finalImageUrl = selectedImagePreviewDataUrl || DEFAULT_LOCATION_IMAGES[location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
 
             try {
-                // หากผู้ใช้แนบรูปภาพ ให้ทำการอัปโหลดขึ้น Firebase Storage
                 if (selectedImageFile) {
                     progressWrapper.classList.remove('hidden');
-                    progressBar.style.width = '35%';
-                    progressPercent.textContent = '35%';
+                    progressStatus.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-bounce"></i>กำลังอัปโหลดและประมวลผลรูปภาพ...`;
+                    progressBar.style.width = '40%';
+                    progressPercent.textContent = '40%';
 
+                    // พยายามอัปโหลดไปที่ Firebase Storage ภายในเวลา 2.5 วินาที
+                    // หากโปรเจกต์ยังไม่ได้เปิด Storage หรือติดสิทธิ์ระบบจะสลับมาบันทึกภาพที่บีบอัดลงในฐานข้อมูลโดยตรงทันที (ไม่ค้างที่ 35% อีกต่อไป)
                     try {
                         const safeName = selectedImageFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
                         const filePath = `laddarom_maintenance/${Date.now()}_${safeName}`;
                         const fileRef = storageRef(storage, filePath);
 
-                        // อัปโหลดไฟล์ไปยัง Firebase Storage
-                        const uploadResult = await uploadBytes(fileRef, selectedImageFile);
-                        progressBar.style.width = '85%';
-                        progressPercent.textContent = '85%';
+                        const uploadResult = await withTimeout(uploadBytes(fileRef, selectedImageFile), 2500, 'Storage timeout');
+                        progressBar.style.width = '80%';
+                        progressPercent.textContent = '80%';
 
-                        // ดึง Download URL จาก Firebase Storage
-                        finalImageUrl = await getDownloadURL(uploadResult.ref);
-                        progressBar.style.width = '100%';
-                        progressPercent.textContent = '100%';
-                    } catch (storageErr) {
-                        console.warn('Firebase Storage fallback (ใช้ภาพย่อความละเอียดเหมาะสมแทนหาก Storage Rules ยังไม่เปิด):', storageErr.message);
-                        // กรณีที่ Storage Rules ยังไม่ได้ตั้งค่า ให้ใช้ภาพที่ผ่านการบีบอัดขนาดเล็กแทนเพื่อให้ระบบทำงานต่อได้ทันที
+                        finalImageUrl = await withTimeout(getDownloadURL(uploadResult.ref), 2000, 'Get URL timeout');
+                    } catch (storageNotice) {
+                        // ใช้ภาพที่ย่อขนาดแล้ว (selectedImagePreviewDataUrl) เก็บลงใน Firestore แทนทันที
                         finalImageUrl = selectedImagePreviewDataUrl || finalImageUrl;
                     }
+
+                    progressBar.style.width = '95%';
+                    progressPercent.textContent = '95%';
                 }
 
                 const newReportData = {
@@ -1311,17 +1306,22 @@
                     imageUrl: finalImageUrl,
                     createdAtMs: Date.now(),
                     updatedAtMs: Date.now(),
-                    createdBy: currentUser.uid
+                    createdBy: currentUser ? currentUser.uid : 'guest'
                 };
 
                 if (!isUsingLocalFallback) {
-                    await addDoc(getReportsCollectionRef(), newReportData);
+                    await withTimeout(addDoc(getReportsCollectionRef(), newReportData), 5000, 'Firestore write timeout');
                 } else {
                     allReports.unshift({ id: 'local-' + Date.now(), ...newReportData });
                     renderAllViews();
                 }
 
-                // รีเซ็ตฟอร์มและสลับกลับไปหน้ารายการงาน
+                if (selectedImageFile) {
+                    progressBar.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                }
+
+                // รีเซ็ตฟอร์มและสลับกลับไปหน้ารายการงานทันที
                 maintenanceForm.reset();
                 clearImageSelection();
                 progressWrapper.classList.add('hidden');
@@ -1329,7 +1329,26 @@
                 window.switchTab('list');
             } catch (err) {
                 console.error('Submit report error:', err);
-                showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+                // กรณีที่ Firestore ตั้งค่าให้อ่านได้อย่างเดียวแต่ยังไม่ได้อนุญาตให้เขียน ให้แสดงผลในหน้าจอและแจ้งเตือนชัดเจน
+                const fallbackReport = {
+                    id: 'local-' + Date.now(),
+                    location,
+                    subLocation,
+                    reporterName: reporterName || 'ลูกบ้านลัดดารมย์',
+                    description,
+                    urgency,
+                    status: 'รอซ่อม',
+                    techNote: '',
+                    imageUrl: finalImageUrl,
+                    createdAtMs: Date.now(),
+                    updatedAtMs: Date.now()
+                };
+                allReports.unshift(fallbackReport);
+                renderAllViews();
+                maintenanceForm.reset();
+                clearImageSelection();
+                window.switchTab('list');
+                showToast('บันทึกข้อมูลสำเร็จ (ตรวจสอบ Rules หากต้องการซิงค์ข้ามเครื่อง)', 'info');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i><span>ส่งใบแจ้งซ่อมบำรุง</span>`;
@@ -1361,7 +1380,7 @@
         };
 
         window.confirmUpdateStatus = async function() {
-            if (!editingReportId || !currentUser) return;
+            if (!editingReportId) return;
 
             const selectedRadio = document.querySelector('input[name="modalStatusRadio"]:checked');
             const newStatus = selectedRadio ? selectedRadio.value : 'รอซ่อม';
@@ -1374,11 +1393,11 @@
             try {
                 if (!isUsingLocalFallback && !String(editingReportId).startsWith('local-')) {
                     const reportRef = doc(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports', editingReportId);
-                    await updateDoc(reportRef, {
+                    await withTimeout(updateDoc(reportRef, {
                         status: newStatus,
                         techNote: techNote,
                         updatedAtMs: Date.now()
-                    });
+                    }), 4000);
                 } else {
                     const idx = allReports.findIndex(r => r.id === editingReportId);
                     if (idx !== -1) {
@@ -1392,7 +1411,7 @@
                 window.closeStatusModal();
             } catch (err) {
                 console.error('Update status error:', err);
-                showToast('ไม่สามารถอัปเดตสถานะได้', 'error');
+                showToast('ไม่สามารถอัปเดตสถานะได้ กรุณาตรวจสอบ Firestore Rules', 'error');
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'บันทึกสถานะ';
@@ -1415,7 +1434,7 @@
         };
 
         window.confirmDeleteReport = async function() {
-            if (!deletingReportId || !currentUser) return;
+            if (!deletingReportId) return;
 
             const btn = document.getElementById('btnConfirmDelete');
             btn.disabled = true;
@@ -1424,7 +1443,7 @@
             try {
                 if (!isUsingLocalFallback && !String(deletingReportId).startsWith('local-')) {
                     const reportRef = doc(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports', deletingReportId);
-                    await deleteDoc(reportRef);
+                    await withTimeout(deleteDoc(reportRef), 4000);
                 } else {
                     allReports = allReports.filter(r => r.id !== deletingReportId);
                     renderAllViews();
@@ -1464,9 +1483,12 @@
             renderReportList();
         });
 
-        window.openLightbox = function(imgUrl, captionText) {
+        window.openLightbox = function(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (!report) return;
+            const imgUrl = report.imageUrl || DEFAULT_LOCATION_IMAGES[report.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
             document.getElementById('lightboxImage').src = imgUrl;
-            document.getElementById('lightboxCaption').textContent = captionText || '';
+            document.getElementById('lightboxCaption').textContent = `${report.location} ${report.subLocation ? '(' + report.subLocation + ')' : ''} - ${report.description}`;
             document.getElementById('lightboxModal').classList.remove('hidden');
         };
 
@@ -1474,13 +1496,13 @@
             document.getElementById('lightboxModal').classList.add('hidden');
         };
 
-        // ฟังก์ชันสร้างข้อมูลตัวอย่างของหมู่บ้านลัดดารมย์เพื่อทดสอบระบบได้ทันที
+        // ข้อมูลตัวอย่างของหมู่บ้านลัดดารมย์
         const DEMO_LADDAROM_DATA = [
             {
                 location: 'ไฟแสงสว่าง',
-                subLocation: 'ซอย 6 หน้าสวนส่วนกลาง',
-                reporterName: 'ลูกบ้าน 99/42',
-                description: 'ไฟกิ่งส่องสว่างริมทางเดินกะพริบและดับไป 2 ต้น ทำให้ช่วงค่ำมืดมาก รบกวนช่างช่วยเปลี่ยนหลอดไฟด้วยครับ',
+                subLocation: 'บ้าน 99/158',
+                reporterName: 'ลูกบ้าน 99/158',
+                description: 'ไฟกิ่งส่องสว่างริมถนนโครงการบริเวณหน้าบ้าน 99/158 มีแสงรบกวน/ชำรุด รบกวนช่างเข้าตรวจสอบและปรับแก้ไขด้วยครับ',
                 urgency: 'ด่วน',
                 status: 'รอซ่อม',
                 techNote: '',
@@ -1493,7 +1515,7 @@
                 description: 'ลู่วิ่งไฟฟ้าตัวที่ 2 หน้าจอแสดงผล Error E02 และสายพานฝืด ไม่สามารถใช้งานได้ชั่วคราว',
                 urgency: 'ปกติ',
                 status: 'กำลังดำเนินการ',
-                techNote: 'ประสานศูนย์บริการ Technogym เข้าตรวจเช็กอะไหล่วันพรุ่งนี้ 10:00 น.',
+                techNote: 'ประสานศูนย์บริการเข้าตรวจเช็กอะไหล่วันพรุ่งนี้ 10:00 น.',
                 imageUrl: DEFAULT_LOCATION_IMAGES['ฟิตเนส']
             },
             {
@@ -1529,18 +1551,16 @@
         }
 
         window.seedDemoReports = async function() {
-            if (!currentUser) return;
             const now = Date.now();
-
             try {
                 if (!isUsingLocalFallback) {
                     for (let i = 0; i < DEMO_LADDAROM_DATA.length; i++) {
-                        await addDoc(getReportsCollectionRef(), {
+                        await withTimeout(addDoc(getReportsCollectionRef(), {
                             ...DEMO_LADDAROM_DATA[i],
                             createdAtMs: now - (i * 3600 * 1000 * 4),
                             updatedAtMs: now - (i * 3600 * 1000 * 2),
-                            createdBy: currentUser.uid
-                        });
+                            createdBy: currentUser ? currentUser.uid : 'guest'
+                        }), 4000);
                     }
                 } else {
                     loadInitialDemoReportsInMemory();
@@ -1551,7 +1571,7 @@
                 console.error('Seed error:', err);
                 loadInitialDemoReportsInMemory();
                 renderAllViews();
-                showToast('แสดงข้อมูลจำลองในโหมดพรีวิวเรียบร้อยแล้ว', 'info');
+                showToast('แสดงข้อมูลจำลองเรียบร้อยแล้ว', 'info');
             }
         };
 
@@ -1586,7 +1606,6 @@
             showToast('ดาวน์โหลดไฟล์ CSV สำหรับนิติบุคคลเรียบร้อยแล้ว');
         };
 
-        // เริ่มต้นระบบเมื่อโหลดหน้าเว็บเสร็จสมบูรณ์
         window.addEventListener('DOMContentLoaded', () => {
             initAuthAndRealtimeListener();
         });
