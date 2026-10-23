@@ -46,7 +46,7 @@
     <style>
         /* Custom scrollbar and smooth SPA transitions */
         body {
-            font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+            font-family: 'Inter', '"Noto Sans Thai"', sans-serif;
             background-color: #f8fafc;
             color: #18181b;
             -webkit-tap-highlight-color: transparent;
@@ -85,7 +85,7 @@
                     <div class="flex items-center gap-2">
                         <h1 class="text-base sm:text-lg font-bold tracking-tight text-zinc-900">LADDAROM</h1>
                         <span class="hidden sm:inline-block text-[11px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200">
-                            Smart Juristic
+                            mnt_laddarom_reports
                         </span>
                     </div>
                     <p class="text-xs text-zinc-500">ระบบแจ้งซ่อมบำรุง หมู่บ้านลัดดารมย์</p>
@@ -93,10 +93,14 @@
             </div>
 
             <!-- Connection Status & Quick Actions -->
-            <div class="flex items-center gap-2 sm:gap-3">
+            <div class="flex items-center gap-2 sm:gap-2.5">
+                <button id="btnMigrateHeader" onclick="window.migrateOldReports()" title="ดึงข้อมูลเก่าจากระบบเดิมกลับมา" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-semibold transition shadow-xs cursor-pointer">
+                    <i class="fa-solid fa-cloud-arrow-down"></i>
+                    <span class="hidden md:inline">ดึงข้อมูลล่าสุดกลับมา</span>
+                </button>
                 <div id="connectionBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-xs font-medium text-zinc-600">
                     <span id="connectionDot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    <span id="connectionText">กำลังเชื่อมต่อ...</span>
+                    <span id="connectionText" class="hidden sm:inline">กำลังเชื่อมต่อ...</span>
                 </div>
                 <button id="btnQuickAddHeader" onclick="window.switchTab('add')" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition shadow-sm cursor-pointer">
                     <i class="fa-solid fa-plus"></i>
@@ -108,6 +112,40 @@
 
     <!-- Main Content Area -->
     <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-5 pb-safe">
+
+        <!-- Shared Month Filter Bar (แสดงเฉพาะแท็บรายการงานและแดชบอร์ด) -->
+        <div id="monthControlBar" class="mb-4 bg-white rounded-2xl p-3 sm:px-5 sm:py-3.5 border border-zinc-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-zinc-100 text-zinc-700 flex items-center justify-center">
+                    <i class="fa-regular fa-calendar-days text-sm"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-zinc-900">ข้อมูลประจำเดือน:</span>
+                        <span id="activeMonthLabel" class="text-xs font-semibold px-2 py-0.5 rounded-md bg-zinc-900 text-white">-</span>
+                    </div>
+                    <p class="text-[11px] text-zinc-500">ดึงข้อมูลเฉพาะเดือนที่เลือกเพื่อประหยัดโควต้าฐานข้อมูล</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 self-end sm:self-auto">
+                <button onclick="window.stepMonth(-1)" title="เดือนก่อนหน้า" class="w-8 h-8 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 flex items-center justify-center text-xs transition cursor-pointer">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <input 
+                    type="month" 
+                    id="monthPickerInput" 
+                    onchange="window.changeMonth(this.value)"
+                    class="bg-zinc-50 border border-zinc-200 text-zinc-800 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:border-zinc-900 transition cursor-pointer"
+                >
+                <button onclick="window.stepMonth(1)" title="เดือนถัดไป" class="w-8 h-8 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 flex items-center justify-center text-xs transition cursor-pointer">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <button onclick="window.resetToCurrentMonth()" class="px-2.5 py-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium transition cursor-pointer">
+                    เดือนนี้
+                </button>
+            </div>
+        </div>
 
         <!-- ========================================== -->
         <!-- TAB 1: รายการงาน (REPORT LIST)              -->
@@ -121,7 +159,7 @@
                             <span>รายการแจ้งซ่อมทั้งหมด</span>
                             <span id="listTotalCount" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-200">0 รายการ</span>
                         </h2>
-                        <p class="text-xs text-zinc-500 mt-0.5">เรียงลำดับจากรายการแจ้งซ่อมล่าสุดไปเก่าสุด (อัปเดตแบบ Real-time)</p>
+                        <p class="text-xs text-zinc-500 mt-0.5">เรียงลำดับจากรายการแจ้งซ่อมล่าสุดไปเก่าสุดของเดือนที่เลือก (Real-time)</p>
                     </div>
 
                     <!-- Search Input -->
@@ -195,16 +233,19 @@
                 <div class="w-14 h-14 rounded-2xl bg-zinc-100 text-zinc-500 flex items-center justify-center mx-auto mb-4">
                     <i class="fa-solid fa-clipboard-check text-2xl"></i>
                 </div>
-                <h3 class="text-base font-bold text-zinc-900">ยังไม่มีรายการแจ้งซ่อมบำรุง</h3>
+                <h3 class="text-base font-bold text-zinc-900">ไม่พบรายการแจ้งซ่อมในเดือนที่เลือก</h3>
                 <p class="text-xs text-zinc-500 mt-1 leading-relaxed">
-                    คุณสามารถกดปุ่ม "แจ้งซ่อมใหม่" เพื่อสร้างรายการแรก หรือกดปุ่มด้านล่างเพื่อสร้างข้อมูลตัวอย่างสำหรับทดสอบระบบ
+                    หากเพิ่งอัปเดตระบบใหม่ คุณสามารถกดปุ่ม <strong>"ดึงข้อมูลล่าสุดกลับมา"</strong> เพื่อย้ายข้อมูลจากระบบเดิมเข้าสู่โครงสร้างรายเดือน หรือกดสร้างใบแจ้งซ่อมใหม่ได้ทันที
                 </p>
-                <div class="mt-5 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+                <div class="mt-5 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2.5">
                     <button onclick="window.switchTab('add')" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition cursor-pointer">
                         <i class="fa-solid fa-plus mr-1.5"></i>แจ้งซ่อมบำรุงใหม่
                     </button>
+                    <button onclick="window.migrateOldReports()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition cursor-pointer">
+                        <i class="fa-solid fa-cloud-arrow-down mr-1.5"></i>ดึงข้อมูลล่าสุดกลับมา (Migrate)
+                    </button>
                     <button onclick="window.seedDemoReports()" id="btnSeedDemoEmpty" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium transition cursor-pointer">
-                        <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>สร้างข้อมูลตัวอย่าง (Demo)
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>สร้างข้อมูลตัวอย่าง
                     </button>
                 </div>
             </div>
@@ -336,9 +377,9 @@
                     <div>
                         <div class="flex items-center justify-between mb-2">
                             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700">
-                                4. รูปถ่ายหน้างาน
+                                4. รูปถ่ายหน้างาน (บีบอัดอัตโนมัติ)
                             </label>
-                            <span class="text-[11px] text-zinc-400">รองรับ JPG, PNG, WEBP</span>
+                            <span class="text-[11px] text-zinc-400">ล้างรูปอัตโนมัติเมื่องานเสร็จเกิน 90 วัน</span>
                         </div>
 
                         <!-- Dropzone / File Trigger -->
@@ -355,7 +396,7 @@
                                 </div>
                                 <div>
                                     <p class="text-xs sm:text-sm font-semibold text-zinc-800">แตะเพื่อถ่ายภาพ หรือเลือกรูปจากอัลบั้ม</p>
-                                    <p class="text-[11px] text-zinc-500 mt-0.5">ระบบจะบีบอัดภาพอัตโนมัติเพื่อให้ส่งข้อมูลรวดเร็วและไม่ค้าง</p>
+                                    <p class="text-[11px] text-zinc-500 mt-0.5">ระบบจะบีบอัดภาพอัตโนมัติทุกครั้งก่อนบันทึกเพื่อประหยัดพื้นที่</p>
                                 </div>
                             </div>
 
@@ -375,7 +416,7 @@
                         <!-- Upload Progress Bar -->
                         <div id="uploadProgressWrapper" class="hidden mt-3 bg-zinc-100 rounded-xl p-3 border border-zinc-200">
                             <div class="flex items-center justify-between text-xs font-medium text-zinc-700 mb-1.5">
-                                <span id="uploadProgressStatus"><i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-bounce"></i>กำลังเตรียมรูปภาพและบันทึก...</span>
+                                <span id="uploadProgressStatus"><i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-bounce"></i>กำลังบีบอัดรูปภาพและบันทึก...</span>
                                 <span id="uploadProgressPercent">35%</span>
                             </div>
                             <div class="w-full h-1.5 bg-zinc-200 rounded-full overflow-hidden">
@@ -417,14 +458,18 @@
                         <span class="px-2.5 py-0.5 rounded-md bg-zinc-900 text-white text-[11px] font-semibold tracking-wide uppercase">Juristic Console</span>
                         <h2 class="text-lg font-bold text-zinc-900">แดชบอร์ดนิติบุคคล</h2>
                     </div>
-                    <p class="text-xs text-zinc-500 mt-1">สรุปสถิติงานซ่อมบำรุงแบบ Real-time และตารางบริหารจัดการ</p>
+                    <p class="text-xs text-zinc-500 mt-1">สรุปสถิติงานซ่อมบำรุงประจำเดือนที่เลือก และเครื่องมือจัดการฐานข้อมูล</p>
                 </div>
                 
-                <!-- Action Buttons: แก้ไขให้จัดเรียงแถวเดียวเสมอ (เลื่อนซ้ายขวาได้ถ้าจอล็ก) -->
+                <!-- Action Buttons -->
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto -mx-1 px-1 py-1">
+                    <button onclick="window.migrateOldReports()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] sm:text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <span>ดึงข้อมูลล่าสุดกลับมา (Migrate)</span>
+                    </button>
                     <button onclick="window.openCleanupModal()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] sm:text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-sm">
                         <i class="fa-solid fa-broom"></i>
-                        <span>ล้างรูปงานเก่า (>60วัน)</span>
+                        <span>ล้างรูปงานเก่า (เกิน 90 วัน)</span>
                     </button>
                     <button onclick="window.seedDemoReports()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 text-[11px] sm:text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-sm">
                         <i class="fa-solid fa-database"></i>
@@ -442,14 +487,14 @@
                 <!-- Card 1: งานทั้งหมด -->
                 <div class="bg-white p-4 sm:p-5 rounded-2xl border border-zinc-200/80 shadow-sm flex flex-col justify-between">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">งานทั้งหมด</span>
+                        <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">งานในเดือนนี้</span>
                         <div class="w-9 h-9 rounded-xl bg-zinc-100 text-zinc-800 flex items-center justify-center">
                             <i class="fa-solid fa-layer-group text-sm"></i>
                         </div>
                     </div>
                     <div class="mt-4">
                         <div id="statTotal" class="text-2xl sm:text-3xl font-bold text-zinc-900">0</div>
-                        <p class="text-[11px] text-zinc-400 mt-0.5">รายการแจ้งซ่อมในระบบ</p>
+                        <p class="text-[11px] text-zinc-400 mt-0.5">รายการแจ้งซ่อมในเดือนที่เลือก</p>
                     </div>
                 </div>
 
@@ -502,7 +547,7 @@
             <!-- Location Breakdown Bar & Analytics -->
             <div class="bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">
-                    สัดส่วนการแจ้งซ่อมแยกตามสถานที่ (Location Breakdown)
+                    สัดส่วนการแจ้งซ่อมแยกตามสถานที่ (เฉพาะเดือนที่เลือก)
                 </h3>
                 <div id="locationBreakdownContainer" class="grid grid-cols-2 sm:grid-cols-5 gap-3"></div>
             </div>
@@ -514,7 +559,7 @@
                         <h3 class="text-sm font-bold text-zinc-900">ตารางสรุปรายการแจ้งซ่อม (สำหรับเจ้าหน้าที่นิติบุคคล)</h3>
                         <p class="text-xs text-zinc-500">สามารถเปลี่ยนสถานะงานซ่อม หรือกดดูภาพขยายได้โดยตรงจากตาราง</p>
                     </div>
-                    <span class="text-xs text-zinc-400">ข้อมูลซิงค์อัตโนมัติ (Real-time Firestore)</span>
+                    <span class="text-xs text-zinc-400">Collection: mnt_laddarom_reports</span>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -631,20 +676,20 @@
         </div>
     </div>
 
-    <!-- MODAL 4: ยืนยันการเคลียร์รูปภาพงานเก่า (Cleanup Modal) -->
+    <!-- MODAL 4: ยืนยันการเคลียร์รูปภาพงานเก่าเกิน 90 วัน (Cleanup Modal) -->
     <div id="cleanupModal" class="fixed inset-0 z-50 hidden bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-sm w-full border border-zinc-200 shadow-2xl p-5 text-center space-y-4 animate-[fadeIn_0.15s_ease-out]">
             <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-100">
                 <i class="fa-solid fa-broom text-lg"></i>
             </div>
             <div>
-                <h3 class="text-base font-bold text-zinc-900">ล้างรูปภาพงานเก่าเพื่อคืนพื้นที่?</h3>
+                <h3 class="text-base font-bold text-zinc-900">ล้างรูปภาพงานเก่าเกิน 3 เดือน (90 วัน)?</h3>
                 <p class="text-xs text-zinc-600 mt-2 leading-relaxed">
-                    ระบบจะทำการลบ <span class="font-bold text-red-600">"รูปภาพที่แนบมา"</span> เฉพาะงานที่ซ่อมเสร็จสิ้นไปแล้วเกิน 60 วัน เพื่อประหยัดพื้นที่จัดเก็บข้อมูล<br>
+                    ระบบจะทำการลบ <span class="font-bold text-red-600">"รูปภาพที่แนบมา"</span> เฉพาะงานที่ซ่อมเสร็จสิ้นหรือแจ้งมาแล้วเกิน 90 วัน เพื่อประหยัดพื้นที่ฐานข้อมูล<br>
                     <span class="text-[11px] text-zinc-400">(ข้อมูลข้อความและประวัติการซ่อมจะยังอยู่ครบถ้วน)</span>
                 </p>
                 <div id="cleanupModalCount" class="mt-3 inline-block px-3 py-1 rounded-full bg-zinc-100 text-zinc-700 text-xs font-semibold border border-zinc-200">
-                    กำลังคำนวณ...
+                    กำลังตรวจสอบ...
                 </div>
             </div>
             <div class="flex items-center gap-2.5 pt-1">
@@ -662,9 +707,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // 1. การตั้งค่า Firebase Config
+        // 1. การตั้งค่า Firebase Config และชื่อ Collection ใหม่
         const userFirebaseConfig = {
             apiKey: "AIzaSyCXuj7Pl1JnBn2Y7BtyzkHHQm4MQH-isrM",
             authDomain: "time-attendance-69699.firebaseapp.com",
@@ -673,15 +718,40 @@
             messagingSenderId: "793986547170",
             appId: "1:793986547170:web:337bfe602d9b3e32f34dbb"
         };
-        const appId = 'laddarom-maintenance-app';
+
+        // ชื่อ Collection ใหม่ที่มี Prefix ชัดเจน (Root Collection เพื่อความเป็นระเบียบในระยะยาว)
+        const COLLECTION_NAME = 'mnt_laddarom_reports';
+        // ชื่อ App ID เดิม (ใช้สำหรับดึงข้อมูลเก่าตอนกดปุ่ม Migrate เท่านั้น)
+        const LEGACY_APP_ID = 'laddarom-maintenance-app';
 
         const app = initializeApp(userFirebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // ฟังก์ชันคำนวณ monthKey รูปแบบ YYYY-MM (ตามเวลาท้องถิ่น)
+        function getMonthKeyFromTimestamp(timestampMs) {
+            const d = timestampMs ? new Date(timestampMs) : new Date();
+            if (isNaN(d.getTime())) {
+                const now = new Date();
+                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}`;
+        }
+
+        function formatThaiMonthLabel(monthKey) {
+            if (!monthKey || !monthKey.includes('-')) return '-';
+            const [y, m] = monthKey.split('-').map(Number);
+            const date = new Date(y, m - 1, 1);
+            return date.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+        }
+
         // 2. State Management
         let currentUser = null;
+        let selectedMonthKey = getMonthKeyFromTimestamp(Date.now());
         let allReports = [];
+        let localFallbackStore = [];
         let currentTab = 'list';
         let activeStatusFilter = 'ALL';
         let activeLocationFilter = 'ALL';
@@ -702,7 +772,7 @@
             'อื่นๆ': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80'
         };
 
-        function withTimeout(promise, ms = 2500, timeoutMsg = 'Operation timed out') {
+        function withTimeout(promise, ms = 5000, timeoutMsg = 'Operation timed out') {
             return Promise.race([
                 promise,
                 new Promise((_, reject) => setTimeout(() => reject(new Error(timeoutMsg)), ms))
@@ -713,7 +783,7 @@
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            const colorMap = { success: 'bg-zinc-900 text-white', error: 'bg-red-600 text-white', info: 'bg-white text-zinc-900 border-zinc-200' };
+            const colorMap = { success: 'bg-zinc-900 text-white', error: 'bg-red-600 text-white', info: 'bg-white text-zinc-900 border border-zinc-200' };
             const iconMap = { success: 'fa-circle-check text-emerald-400', error: 'fa-circle-exclamation text-white', info: 'fa-circle-info text-zinc-700' };
             
             toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg text-xs font-medium transition-all duration-300 ${colorMap[type] || colorMap.success}`;
@@ -740,6 +810,7 @@
             return `<span class="px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200 text-[10px] font-medium">ปกติ</span>`;
         }
 
+        // บีบอัดรูปภาพก่อนบันทึกเสมอ
         function compressImageToDataUrl(file, maxWidth = 800, quality = 0.6) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -752,7 +823,7 @@
                         canvas.width = w; canvas.height = h;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, w, h);
-                        resolve(canvas.toDataURL('image/jpeg', quality)); // quality 0.6 for smaller size ~60KB
+                        resolve(canvas.toDataURL('image/jpeg', quality));
                     };
                     img.onerror = reject; img.src = e.target.result;
                 };
@@ -760,7 +831,11 @@
             });
         }
 
-        // 4. ระบบสลับแท็บแบบ SPA
+        function isCustomBase64Image(imageUrl) {
+            return Boolean(imageUrl && imageUrl.trim() !== '' && !Object.values(DEFAULT_LOCATION_IMAGES).includes(imageUrl));
+        }
+
+        // 4. ระบบสลับแท็บแบบ SPA และตัวเลือกเดือน
         window.switchTab = function(tabName) {
             currentTab = tabName;
             ['list', 'add', 'dashboard'].forEach(t => {
@@ -774,11 +849,48 @@
                     navBtn.classList.add('text-zinc-400', 'font-medium'); navBtn.classList.remove('text-zinc-900', 'font-semibold');
                 }
             });
+
+            // ซ่อนแถบเลือกเดือนในหน้าฟอร์มแจ้งซ่อมใหม่
+            const monthBar = document.getElementById('monthControlBar');
+            if (tabName === 'add') {
+                monthBar.classList.add('hidden');
+            } else {
+                monthBar.classList.remove('hidden');
+            }
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // 5. เชื่อมต่อ Firestore
-        function getReportsCollectionRef() { return collection(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports'); }
+        function updateMonthControlUI() {
+            const picker = document.getElementById('monthPickerInput');
+            const label = document.getElementById('activeMonthLabel');
+            if (picker) picker.value = selectedMonthKey;
+            if (label) label.textContent = formatThaiMonthLabel(selectedMonthKey);
+        }
+
+        window.changeMonth = function(newMonthKey) {
+            if (!newMonthKey || newMonthKey === selectedMonthKey) return;
+            selectedMonthKey = newMonthKey;
+            updateMonthControlUI();
+            subscribeToSelectedMonth();
+        };
+
+        window.stepMonth = function(offset) {
+            const [y, m] = selectedMonthKey.split('-').map(Number);
+            const d = new Date(y, (m - 1) + offset, 1);
+            const nextKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            window.changeMonth(nextKey);
+        };
+
+        window.resetToCurrentMonth = function() {
+            const currentKey = getMonthKeyFromTimestamp(Date.now());
+            window.changeMonth(currentKey);
+        };
+
+        // 5. เชื่อมต่อ Firestore (Root Collection: mnt_laddarom_reports)
+        function getReportsCollectionRef() {
+            return collection(db, COLLECTION_NAME);
+        }
 
         function updateConnectionStatusUI(status, text) {
             const dot = document.getElementById('connectionDot');
@@ -786,34 +898,201 @@
             dot.className = `w-2 h-2 rounded-full ${status === 'online' ? 'bg-emerald-500' : (status === 'fallback' ? 'bg-amber-500' : 'bg-red-500')}`;
         }
 
-        async function initAuthAndRealtimeListener() {
-            try { currentUser = (await signInAnonymously(auth)).user; } 
-            catch (e) { currentUser = { uid: 'guest-' + Date.now() }; }
+        // ดึงเฉพาะข้อมูลของเดือนที่เลือก (Query by Month)
+        function subscribeToSelectedMonth() {
+            if (unsubscribeFirestore) {
+                unsubscribeFirestore();
+                unsubscribeFirestore = null;
+            }
 
-            unsubscribeFirestore = onSnapshot(getReportsCollectionRef(), (snapshot) => {
+            document.getElementById('listLoadingState').classList.remove('hidden');
+
+            const monthQuery = query(
+                getReportsCollectionRef(),
+                where('monthKey', '==', selectedMonthKey)
+            );
+
+            unsubscribeFirestore = onSnapshot(monthQuery, (snapshot) => {
                 isUsingLocalFallback = false;
-                updateConnectionStatusUI('online', 'เชื่อมต่อฐานข้อมูลแล้ว');
+                updateConnectionStatusUI('online', 'ออนไลน์');
                 allReports = [];
                 snapshot.forEach(docSnap => allReports.push({ id: docSnap.id, ...docSnap.data() }));
+                // เรียงลำดับจากใหม่ไปเก่าในฝั่ง Client เพื่อไม่ต้องสร้าง Composite Index ใน Firebase
                 allReports.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
                 document.getElementById('listLoadingState').classList.add('hidden');
                 renderAllViews();
             }, (error) => {
                 isUsingLocalFallback = true;
-                updateConnectionStatusUI('fallback', 'โหมดสาธิต (รอตั้งค่า Rules)');
+                updateConnectionStatusUI('fallback', 'โหมดสาธิต');
                 document.getElementById('listLoadingState').classList.add('hidden');
-                if (allReports.length === 0) loadInitialDemoReportsInMemory();
+                if (localFallbackStore.length === 0) loadInitialDemoReportsInMemory();
+                allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
+                allReports.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
                 renderAllViews();
             });
         }
 
-        // 6. ฟังก์ชัน Render
+        // ฟังก์ชันตรวจสอบและล้างรูปภาพที่เก่าเกิน 3 เดือน (90 วัน) อัตโนมัติ
+        async function autoCleanupOldImages() {
+            if (isUsingLocalFallback) return;
+            const AUTO_CLEAN_KEY = 'mnt_laddarom_last_auto_clean';
+            const lastRun = Number(localStorage.getItem(AUTO_CLEAN_KEY) || 0);
+            const oneDayMs = 24 * 60 * 60 * 1000;
+
+            // ทำงานแค่วันละ 1 ครั้งเพื่อประหยัดโควต้าการอ่านข้อมูล
+            if (Date.now() - lastRun < oneDayMs) return;
+
+            try {
+                const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
+                const oldQuery = query(
+                    getReportsCollectionRef(),
+                    where('createdAtMs', '<', ninetyDaysAgo)
+                );
+                const snap = await getDocs(oldQuery);
+                const tasks = [];
+
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if (isCustomBase64Image(data.imageUrl)) {
+                        tasks.push(
+                            updateDoc(doc(db, COLLECTION_NAME, docSnap.id), {
+                                imageUrl: '',
+                                imageCleanedAtMs: Date.now()
+                            })
+                        );
+                    }
+                });
+
+                if (tasks.length > 0) {
+                    await Promise.all(tasks);
+                    showToast(`ระบบอัตโนมัติล้างรูปภาพเก่าเกิน 3 เดือน (${tasks.length} รายการ)`, 'info');
+                }
+                localStorage.setItem(AUTO_CLEAN_KEY, String(Date.now()));
+            } catch (err) {
+                console.warn('Auto cleanup skipped:', err);
+            }
+        }
+
+        async function initAuthAndRealtimeListener() {
+            updateMonthControlUI();
+            try { currentUser = (await signInAnonymously(auth)).user; } 
+            catch (e) { currentUser = { uid: 'guest-' + Date.now() }; }
+
+            subscribeToSelectedMonth();
+            // รันระบบตรวจสอบและเคลียร์รูปเก่าเกิน 3 เดือนอัตโนมัติในพื้นหลัง
+            setTimeout(autoCleanupOldImages, 3500);
+        }
+
+        // 6. ปุ่มดึงข้อมูลล่าสุดกลับมา (Migrate จาก Collection เดิม + เติม monthKey อัตโนมัติ)
+        window.migrateOldReports = async function() {
+            const btnHeader = document.getElementById('btnMigrateHeader');
+            const originalHtml = btnHeader ? btnHeader.innerHTML : '';
+            if (btnHeader) {
+                btnHeader.disabled = true;
+                btnHeader.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>กำลังดึงข้อมูล...</span>`;
+            }
+
+            try {
+                if (isUsingLocalFallback) {
+                    loadInitialDemoReportsInMemory();
+                    allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
+                    renderAllViews();
+                    showToast('ดึงข้อมูลจำลองในโหมดสาธิตเรียบร้อย', 'info');
+                    return;
+                }
+
+                let migratedCount = 0;
+                let latestFoundMonthKey = null;
+
+                // 1) ดึงจาก Path เดิม: artifacts/laddarom-maintenance-app/public/data/laddarom_reports
+                const legacyPathRef = collection(db, 'artifacts', LEGACY_APP_ID, 'public', 'data', 'laddarom_reports');
+                // 2) ดึงจาก Root เดิมเผื่อมี: laddarom_reports
+                const legacyRootRef = collection(db, 'laddarom_reports');
+                // 3) ตรวจสอบเอกสารใน mnt_laddarom_reports ที่อาจยังไม่มี monthKey
+                const currentColRef = getReportsCollectionRef();
+
+                const [snapLegacyPath, snapLegacyRoot, snapCurrent] = await Promise.allSettled([
+                    getDocs(legacyPathRef),
+                    getDocs(legacyRootRef),
+                    getDocs(currentColRef)
+                ]);
+
+                const writePromises = [];
+
+                const processSnapshot = (snapResult, isCurrentCollection = false) => {
+                    if (snapResult.status !== 'fulfilled' || !snapResult.value) return;
+                    snapResult.value.forEach(docSnap => {
+                        const data = docSnap.data();
+                        const createdMs = data.createdAtMs || data.updatedAtMs || Date.now();
+                        const computedMonthKey = data.monthKey || getMonthKeyFromTimestamp(createdMs);
+
+                        if (!latestFoundMonthKey || computedMonthKey > latestFoundMonthKey) {
+                            latestFoundMonthKey = computedMonthKey;
+                        }
+
+                        // ถ้าอยู่ใน Collection ปัจจุบันและมี monthKey อยู่แล้ว ไม่ต้องเขียนซ้ำ
+                        if (isCurrentCollection && data.monthKey) return;
+
+                        const targetDocRef = doc(db, COLLECTION_NAME, docSnap.id);
+                        writePromises.push(
+                            setDoc(targetDocRef, {
+                                ...data,
+                                createdAtMs: createdMs,
+                                updatedAtMs: data.updatedAtMs || createdMs,
+                                monthKey: computedMonthKey
+                            }, { merge: true })
+                        );
+                        migratedCount++;
+                    });
+                };
+
+                processSnapshot(snapLegacyPath, false);
+                processSnapshot(snapLegacyRoot, false);
+                processSnapshot(snapCurrent, true);
+
+                if (writePromises.length > 0) {
+                    await Promise.all(writePromises);
+                }
+
+                // หากเดือนปัจจุบันไม่มีข้อมูล แต่พบข้อมูลในเดือนล่าสุด ให้สลับไปเดือนนั้นทันที
+                if (latestFoundMonthKey && latestFoundMonthKey !== selectedMonthKey && allReports.length === 0) {
+                    window.changeMonth(latestFoundMonthKey);
+                } else {
+                    subscribeToSelectedMonth();
+                }
+
+                if (migratedCount > 0) {
+                    showToast(`ดึงข้อมูลเก่าและอัปเดตสำเร็จ ${migratedCount} รายการ!`);
+                } else if (latestFoundMonthKey) {
+                    showToast(`ข้อมูลทั้งหมดเป็นปัจจุบันแล้ว (เดือนล่าสุดที่มีข้อมูล: ${formatThaiMonthLabel(latestFoundMonthKey)})`, 'info');
+                } else {
+                    showToast('ไม่พบข้อมูลค้างในระบบเดิม', 'info');
+                }
+            } catch (err) {
+                console.error('Migration error:', err);
+                showToast('เกิดข้อผิดพลาดในการดึงข้อมูลเก่า กรุณาลองอีกครั้ง', 'error');
+            } finally {
+                if (btnHeader) {
+                    btnHeader.disabled = false;
+                    btnHeader.innerHTML = originalHtml;
+                }
+            }
+        };
+
+        // 7. ฟังก์ชัน Render
         function renderAllViews() {
             renderReportList();
             renderDashboard();
         }
 
-        function escapeHtml(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
 
         function renderReportList() {
             const container = document.getElementById('reportCardsContainer');
@@ -827,12 +1106,15 @@
             document.getElementById('listTotalCount').textContent = `${filtered.length} รายการ`;
             
             if (allReports.length === 0) {
-                container.innerHTML = ''; document.getElementById('listEmptyState').classList.remove('hidden'); return;
+                container.innerHTML = '';
+                document.getElementById('listEmptyState').classList.remove('hidden');
+                return;
             }
             document.getElementById('listEmptyState').classList.add('hidden');
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full bg-white rounded-2xl p-8 text-center border border-zinc-200/80"><p class="text-sm font-semibold text-zinc-800">ไม่พบรายการที่ตรงกับตัวกรอง</p></div>`; return;
+                container.innerHTML = `<div class="col-span-full bg-white rounded-2xl p-8 text-center border border-zinc-200/80"><p class="text-sm font-semibold text-zinc-800">ไม่พบรายการที่ตรงกับตัวกรองในเดือนนี้</p></div>`;
+                return;
             }
 
             container.innerHTML = filtered.map(report => {
@@ -893,7 +1175,10 @@
             }).join('');
 
             const tbody = document.getElementById('dashboardTableBody');
-            if (allReports.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-zinc-400 text-xs">ยังไม่มีข้อมูล</td></tr>`; return; }
+            if (allReports.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-zinc-400 text-xs">ไม่มีรายการแจ้งซ่อมในเดือนที่เลือก</td></tr>`;
+                return;
+            }
 
             tbody.innerHTML = allReports.map(r => {
                 const imgUrl = r.imageUrl || DEFAULT_LOCATION_IMAGES[r.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
@@ -906,42 +1191,48 @@
                         <td class="py-3 px-4 text-xs text-zinc-500">${formatThaiDateTime(r.createdAtMs)}</td>
                         <td class="py-3 px-4">${getStatusBadgeHTML(r.status)}</td>
                         <td class="py-3 px-4 text-right">
-                            <button onclick="window.openStatusModal('${r.id}')" class="px-2 py-1.5 rounded-lg bg-zinc-900 text-white text-[11px] mr-1">สถานะ</button>
-                            <button onclick="window.openDeleteModal('${r.id}')" class="px-2 py-1.5 rounded-lg border text-zinc-500 hover:text-red-600"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                            <button onclick="window.openStatusModal('${r.id}')" class="px-2 py-1.5 rounded-lg bg-zinc-900 text-white text-[11px] mr-1 cursor-pointer">สถานะ</button>
+                            <button onclick="window.openDeleteModal('${r.id}')" class="px-2 py-1.5 rounded-lg border text-zinc-500 hover:text-red-600 cursor-pointer"><i class="fa-solid fa-trash-can text-xs"></i></button>
                         </td>
                     </tr>`;
             }).join('');
         }
 
-        // 7. Preview Image Logic
+        // 8. Preview & Compress Image Logic
         const imageInput = document.getElementById('reportImageInput');
         imageInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
             if (!file.type.startsWith('image/')) { showToast('รองรับไฟล์รูปภาพเท่านั้น', 'error'); return; }
             selectedImageFile = file;
-            document.getElementById('imageFileName').textContent = `${file.name} (${(file.size/1024).toFixed(0)} KB)`;
             try {
-                // บีบอัดภาพเพื่อประหยัดพื้นที่ Firestore (เหลือประมาณ 60KB)
+                // บีบอัดภาพเสมอเมื่อเลือกรูป
                 selectedImagePreviewDataUrl = await compressImageToDataUrl(file, 800, 0.6);
+                const approxKb = Math.round((selectedImagePreviewDataUrl.length * 3) / 4 / 1024);
+                document.getElementById('imageFileName').textContent = `${file.name} (บีบอัดเหลือ ~${approxKb} KB)`;
                 document.getElementById('imagePreviewElement').src = selectedImagePreviewDataUrl;
                 document.getElementById('uploadPlaceholder').classList.add('hidden');
                 document.getElementById('imagePreviewContainer').classList.remove('hidden');
-            } catch (err) { showToast('ไม่สามารถพรีวิวภาพได้', 'error'); }
+            } catch (err) {
+                showToast('ไม่สามารถบีบอัดหรือพรีวิวภาพได้', 'error');
+            }
         });
 
         document.getElementById('btnRemoveImage').addEventListener('click', (e) => {
-            e.stopPropagation(); clearImageSelection();
+            e.stopPropagation();
+            clearImageSelection();
         });
 
         function clearImageSelection() {
-            selectedImageFile = null; selectedImagePreviewDataUrl = null; imageInput.value = '';
+            selectedImageFile = null;
+            selectedImagePreviewDataUrl = null;
+            imageInput.value = '';
             document.getElementById('imagePreviewElement').src = '';
             document.getElementById('imagePreviewContainer').classList.add('hidden');
             document.getElementById('uploadPlaceholder').classList.remove('hidden');
         }
 
-        // 8. Submit Form (Save directly to Firestore Fallback)
+        // 9. Submit Form (บังคับบีบอัดรูป + บันทึก monthKey)
         document.getElementById('maintenanceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const location = document.getElementById('reportLocation').value;
@@ -958,33 +1249,56 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>กำลังบันทึกข้อมูล...</span>`;
             
-            // กรณีใช้รูปที่บีบอัดเป็น Base64 Data URL หรือ ปล่อยว่างเพื่อใช้รูปเริ่มต้น
-            let finalImageUrl = selectedImagePreviewDataUrl || ""; 
+            let finalImageUrl = selectedImagePreviewDataUrl || "";
+            if (selectedImageFile && !finalImageUrl) {
+                finalImageUrl = await compressImageToDataUrl(selectedImageFile, 800, 0.6);
+            }
 
             if (selectedImageFile) {
                 pWrapper.classList.remove('hidden');
-                pBar.style.width = '70%'; pPercent.textContent = '70%';
+                pBar.style.width = '75%';
+                pPercent.textContent = '75%';
             }
 
+            const nowMs = Date.now();
+            const reportMonthKey = getMonthKeyFromTimestamp(nowMs);
+
             const newReport = {
-                location, subLocation: subLoc, reporterName: repName || 'ลูกบ้าน', description: desc, urgency,
-                status: 'รอซ่อม', techNote: '', imageUrl: finalImageUrl,
-                createdAtMs: Date.now(), updatedAtMs: Date.now(), createdBy: currentUser?.uid || 'guest'
+                location,
+                subLocation: subLoc,
+                reporterName: repName || 'ลูกบ้าน',
+                description: desc,
+                urgency,
+                status: 'รอซ่อม',
+                techNote: '',
+                imageUrl: finalImageUrl,
+                createdAtMs: nowMs,
+                updatedAtMs: nowMs,
+                monthKey: reportMonthKey,
+                createdBy: currentUser?.uid || 'guest'
             };
 
             try {
                 if (!isUsingLocalFallback) {
-                    await withTimeout(addDoc(getReportsCollectionRef(), newReport), 5000, 'Firestore Timeout');
+                    await withTimeout(addDoc(getReportsCollectionRef(), newReport), 6000, 'Firestore Timeout');
                 } else {
-                    allReports.unshift({ id: 'local-' + Date.now(), ...newReport });
-                    renderAllViews();
+                    localFallbackStore.unshift({ id: 'local-' + nowMs, ...newReport });
                 }
                 
                 if (selectedImageFile) { pBar.style.width = '100%'; pPercent.textContent = '100%'; }
                 
                 document.getElementById('maintenanceForm').reset();
-                clearImageSelection(); pWrapper.classList.add('hidden');
+                clearImageSelection();
+                pWrapper.classList.add('hidden');
                 showToast('ส่งใบแจ้งซ่อมสำเร็จ');
+
+                // สลับไปยังเดือนปัจจุบันเพื่อให้เห็นรายการที่เพิ่งแจ้งทันที
+                if (selectedMonthKey !== reportMonthKey) {
+                    window.changeMonth(reportMonthKey);
+                } else if (isUsingLocalFallback) {
+                    allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
+                    renderAllViews();
+                }
                 window.switchTab('list');
             } catch (err) {
                 showToast('เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่', 'error');
@@ -995,9 +1309,10 @@
             }
         });
 
-        // 9. Modals Logic (Update, Delete, Lightbox, Filter)
+        // 10. Modals Logic (Update, Delete, Lightbox, Filter)
         window.openStatusModal = (id) => {
-            const r = allReports.find(x => x.id === id); if(!r) return;
+            const r = allReports.find(x => x.id === id);
+            if (!r) return;
             editingReportId = id;
             document.getElementById('modalReportLocation').textContent = r.location;
             document.getElementById('modalReportDesc').textContent = r.description;
@@ -1005,91 +1320,152 @@
             document.querySelectorAll('input[name="modalStatusRadio"]').forEach(radio => radio.checked = (radio.value === r.status));
             document.getElementById('statusModal').classList.remove('hidden');
         };
-        window.closeStatusModal = () => { document.getElementById('statusModal').classList.add('hidden'); };
+
+        window.closeStatusModal = () => {
+            document.getElementById('statusModal').classList.add('hidden');
+        };
+
         window.confirmUpdateStatus = async () => {
-            if(!editingReportId) return;
+            if (!editingReportId) return;
             const newStatus = document.querySelector('input[name="modalStatusRadio"]:checked')?.value || 'รอซ่อม';
             const techNote = document.getElementById('modalTechNote').value.trim();
-            const btn = document.getElementById('btnConfirmStatusUpdate'); btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+            const btn = document.getElementById('btnConfirmStatusUpdate');
+            btn.disabled = true;
+            btn.textContent = 'กำลังบันทึก...';
             try {
                 if (!isUsingLocalFallback && !String(editingReportId).startsWith('local-')) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports', editingReportId), { status: newStatus, techNote, updatedAtMs: Date.now() });
+                    await updateDoc(doc(db, COLLECTION_NAME, editingReportId), {
+                        status: newStatus,
+                        techNote,
+                        updatedAtMs: Date.now()
+                    });
                 } else {
-                    const idx = allReports.findIndex(r => r.id === editingReportId);
-                    if(idx !== -1) { allReports[idx].status = newStatus; allReports[idx].techNote = techNote; renderAllViews(); }
+                    const idx = localFallbackStore.findIndex(r => r.id === editingReportId);
+                    if (idx !== -1) {
+                        localFallbackStore[idx].status = newStatus;
+                        localFallbackStore[idx].techNote = techNote;
+                        localFallbackStore[idx].updatedAtMs = Date.now();
+                    }
+                    allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
+                    renderAllViews();
                 }
-                showToast('อัปเดตสถานะสำเร็จ'); window.closeStatusModal();
-            } catch(e) { showToast('อัปเดตล้มเหลว', 'error'); } 
-            finally { btn.disabled = false; btn.textContent = 'บันทึกสถานะ'; }
+                showToast('อัปเดตสถานะสำเร็จ');
+                window.closeStatusModal();
+            } catch (e) {
+                showToast('อัปเดตล้มเหลว', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'บันทึกสถานะ';
+            }
         };
 
-        window.openDeleteModal = (id) => { deletingReportId = id; document.getElementById('deleteModal').classList.remove('hidden'); };
-        window.closeDeleteModal = () => { document.getElementById('deleteModal').classList.add('hidden'); };
+        window.openDeleteModal = (id) => {
+            deletingReportId = id;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        };
+
+        window.closeDeleteModal = () => {
+            document.getElementById('deleteModal').classList.add('hidden');
+        };
+
         window.confirmDeleteReport = async () => {
-            if(!deletingReportId) return;
-            const btn = document.getElementById('btnConfirmDelete'); btn.disabled = true;
+            if (!deletingReportId) return;
+            const btn = document.getElementById('btnConfirmDelete');
+            btn.disabled = true;
             try {
                 if (!isUsingLocalFallback && !String(deletingReportId).startsWith('local-')) {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports', deletingReportId));
+                    await deleteDoc(doc(db, COLLECTION_NAME, deletingReportId));
                 } else {
-                    allReports = allReports.filter(r => r.id !== deletingReportId); renderAllViews();
+                    localFallbackStore = localFallbackStore.filter(r => r.id !== deletingReportId);
+                    allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
+                    renderAllViews();
                 }
-                showToast('ลบรายการสำเร็จ'); window.closeDeleteModal();
-            } catch(e) { showToast('ลบล้มเหลว', 'error'); } 
-            finally { btn.disabled = false; btn.textContent = 'ลบข้อมูลทันที'; }
-        };
-
-        // 10. ระบบล้างรูปภาพงานเก่า (Clean up old images > 60 days)
-        window.openCleanupModal = () => {
-            const sixtyDaysAgo = Date.now() - (60 * 24 * 60 * 60 * 1000);
-            
-            // หาข้อมูลที่ "เสร็จสิ้น" + "เกิน 60 วัน" + "มีรูปแนบที่ไม่ใช่ Default"
-            eligibleForCleanup = allReports.filter(r => {
-                const isCustomImage = r.imageUrl && r.imageUrl.trim() !== '' && !Object.values(DEFAULT_LOCATION_IMAGES).includes(r.imageUrl);
-                return r.status === 'เสร็จสิ้น' && r.updatedAtMs < sixtyDaysAgo && isCustomImage;
-            });
-
-            document.getElementById('cleanupModalCount').innerHTML = eligibleForCleanup.length > 0 
-                ? `พบรายการที่เข้าข่ายจำนวน <strong class="text-red-600">${eligibleForCleanup.length}</strong> รายการ`
-                : `<span class="text-zinc-500"><i class="fa-solid fa-check-circle mr-1"></i>ยอดเยี่ยม! ไม่มีรูปภาพขยะค้างในระบบ</span>`;
-            
-            const btn = document.getElementById('btnConfirmCleanup');
-            if(eligibleForCleanup.length === 0) {
-                btn.disabled = true;
-                btn.classList.replace('bg-amber-500', 'bg-zinc-200');
-                btn.classList.replace('text-white', 'text-zinc-400');
-            } else {
+                showToast('ลบรายการสำเร็จ');
+                window.closeDeleteModal();
+            } catch (e) {
+                showToast('ลบล้มเหลว', 'error');
+            } finally {
                 btn.disabled = false;
-                btn.classList.replace('bg-zinc-200', 'bg-amber-500');
-                btn.classList.replace('text-zinc-400', 'text-white');
+                btn.textContent = 'ลบข้อมูลทันที';
             }
-            
-            document.getElementById('cleanupModal').classList.remove('hidden');
         };
 
-        window.closeCleanupModal = () => { document.getElementById('cleanupModal').classList.add('hidden'); };
+        // 11. ระบบล้างรูปภาพงานเก่าเกิน 90 วัน (3 เดือน) แบบกดตรวจสอบได้ทุกเดือน
+        window.openCleanupModal = async () => {
+            document.getElementById('cleanupModal').classList.remove('hidden');
+            const countEl = document.getElementById('cleanupModalCount');
+            const btn = document.getElementById('btnConfirmCleanup');
+            countEl.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-1"></i>กำลังสแกนหารูปภาพที่เก่าเกิน 90 วัน...`;
+            btn.disabled = true;
+
+            const ninetyDaysAgo = Date.now() - (90 * 24 * 60 * 60 * 1000);
+            eligibleForCleanup = [];
+
+            try {
+                if (!isUsingLocalFallback) {
+                    const oldQuery = query(
+                        getReportsCollectionRef(),
+                        where('createdAtMs', '<', ninetyDaysAgo)
+                    );
+                    const snap = await getDocs(oldQuery);
+                    snap.forEach(docSnap => {
+                        const r = { id: docSnap.id, ...docSnap.data() };
+                        if (isCustomBase64Image(r.imageUrl)) {
+                            eligibleForCleanup.push(r);
+                        }
+                    });
+                } else {
+                    eligibleForCleanup = localFallbackStore.filter(r => r.createdAtMs < ninetyDaysAgo && isCustomBase64Image(r.imageUrl));
+                }
+
+                countEl.innerHTML = eligibleForCleanup.length > 0 
+                    ? `พบรายการที่มีรูปเก่าเกิน 90 วัน จำนวน <strong class="text-red-600">${eligibleForCleanup.length}</strong> รายการ`
+                    : `<span class="text-zinc-500"><i class="fa-solid fa-check-circle mr-1"></i>ยอดเยี่ยม! ไม่มีรูปภาพเก่าเกิน 90 วันค้างในระบบ</span>`;
+
+                if (eligibleForCleanup.length === 0) {
+                    btn.disabled = true;
+                    btn.classList.replace('bg-amber-500', 'bg-zinc-200');
+                    btn.classList.replace('text-white', 'text-zinc-400');
+                } else {
+                    btn.disabled = false;
+                    btn.classList.replace('bg-zinc-200', 'bg-amber-500');
+                    btn.classList.replace('text-zinc-400', 'text-white');
+                }
+            } catch (e) {
+                countEl.innerHTML = `<span class="text-red-600">ไม่สามารถสแกนข้อมูลได้</span>`;
+            }
+        };
+
+        window.closeCleanupModal = () => {
+            document.getElementById('cleanupModal').classList.add('hidden');
+        };
 
         window.confirmCleanup = async () => {
-            if(eligibleForCleanup.length === 0) return;
+            if (eligibleForCleanup.length === 0) return;
             const btn = document.getElementById('btnConfirmCleanup'); 
-            btn.disabled = true; btn.textContent = 'กำลังล้างข้อมูล...';
+            btn.disabled = true;
+            btn.textContent = 'กำลังล้างข้อมูล...';
             try {
                 if (!isUsingLocalFallback) {
                     const updatePromises = eligibleForCleanup.map(report => {
-                        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports', report.id);
-                        return updateDoc(ref, { imageUrl: '', updatedAtMs: Date.now() }); // เซ็ต imageUrl เป็นค่าว่าง เพื่อให้ UI ดึงภาพ Default มาใช้แทน
+                        const ref = doc(db, COLLECTION_NAME, report.id);
+                        return updateDoc(ref, { imageUrl: '', imageCleanedAtMs: Date.now() });
                     });
                     await Promise.all(updatePromises);
                 } else {
                     eligibleForCleanup.forEach(report => {
-                        const idx = allReports.findIndex(r => r.id === report.id);
-                        if(idx !== -1) { allReports[idx].imageUrl = ''; allReports[idx].updatedAtMs = Date.now(); }
+                        const idx = localFallbackStore.findIndex(r => r.id === report.id);
+                        if (idx !== -1) {
+                            localFallbackStore[idx].imageUrl = '';
+                            localFallbackStore[idx].imageCleanedAtMs = Date.now();
+                        }
                     });
+                    allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
                     renderAllViews();
                 }
-                showToast(`คืนพื้นที่สำเร็จ เคลียร์รูปเก่า ${eligibleForCleanup.length} รายการแล้ว`);
+                showToast(`คืนพื้นที่สำเร็จ เคลียร์รูปเก่าเกิน 90 วัน จำนวน ${eligibleForCleanup.length} รายการแล้ว`);
                 window.closeCleanupModal();
-            } catch(e) {
+            } catch (e) {
                 showToast('เกิดข้อผิดพลาดระหว่างล้างข้อมูล', 'error');
             } finally {
                 btn.textContent = 'ยืนยันล้างข้อมูล';
@@ -1097,49 +1473,109 @@
         };
 
         window.openLightbox = (id) => {
-            const r = allReports.find(x => x.id === id); if(!r) return;
+            const r = allReports.find(x => x.id === id);
+            if (!r) return;
             document.getElementById('lightboxImage').src = r.imageUrl || DEFAULT_LOCATION_IMAGES[r.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
             document.getElementById('lightboxCaption').textContent = r.description;
             document.getElementById('lightboxModal').classList.remove('hidden');
         };
-        window.closeLightbox = () => { document.getElementById('lightboxModal').classList.add('hidden'); };
 
-        window.setStatusFilter = (s) => { activeStatusFilter = s; document.querySelectorAll('.status-filter-btn').forEach(b => { b.className = b.getAttribute('data-filter')===s ? 'status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 text-white transition' : 'status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition'; }); renderReportList(); };
-        document.getElementById('locationFilterSelect').addEventListener('change', (e) => { activeLocationFilter = e.target.value; renderReportList(); });
-        document.getElementById('searchInput').addEventListener('input', (e) => { searchQuery = e.target.value.trim(); renderReportList(); });
+        window.closeLightbox = () => {
+            document.getElementById('lightboxModal').classList.add('hidden');
+        };
 
-        // Demo Data (เพิ่มข้อมูลอายุ 65 วัน เพื่อให้กดทดสอบลบได้)
-        const now = Date.now();
-        const sixtyFiveDaysAgo = now - (65 * 24 * 60 * 60 * 1000); // จำลองว่าส่งมาเมื่อ 65 วันที่แล้ว
-        
-        const DEMO_LADDAROM_DATA = [
-            { location: 'ไฟแสงสว่าง', subLocation: 'บ้าน 99/158', reporterName: 'ลูกบ้าน', description: 'ไฟกิ่งส่องสว่างริมถนนโครงการดับ', urgency: 'ด่วน', status: 'รอซ่อม', techNote: '', imageUrl: DEFAULT_LOCATION_IMAGES['ไฟแสงสว่าง'] },
-            { location: 'ฟิตเนส', subLocation: 'คลับเฮาส์', reporterName: 'รปภ.', description: 'ลู่วิ่ง Error ไม่สามารถใช้งานได้', urgency: 'ปกติ', status: 'กำลังดำเนินการ', techNote: 'รออะไหล่', imageUrl: DEFAULT_LOCATION_IMAGES['ฟิตเนส'] },
-            // ไอเทมนี้จำลองให้เป็นงานเก่าและมีรูปที่แนบเอง (Base64 จำลอง) เพื่อให้เข้าเงื่อนไขโดนลบรูปภาพ
-            { location: 'อาคารนิติ', subLocation: 'ประวัติเก่า (สำหรับทดสอบลบ)', reporterName: 'นิติบุคคล', description: 'แอร์ห้องรับรองน้ำหยด ซ่อมเสร็จเมื่อ 2 เดือนก่อน', urgency: 'ปกติ', status: 'เสร็จสิ้น', techNote: 'ล้างทำความสะอาดแอร์เรียบร้อย', imageUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', createdAtMs: sixtyFiveDaysAgo, updatedAtMs: sixtyFiveDaysAgo + 3600000 }
-        ];
+        window.setStatusFilter = (s) => {
+            activeStatusFilter = s;
+            document.querySelectorAll('.status-filter-btn').forEach(b => {
+                b.className = b.getAttribute('data-filter') === s
+                    ? 'status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 text-white transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer'
+                    : 'status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer';
+            });
+            renderReportList();
+        };
+
+        document.getElementById('locationFilterSelect').addEventListener('change', (e) => {
+            activeLocationFilter = e.target.value;
+            renderReportList();
+        });
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchQuery = e.target.value.trim();
+            renderReportList();
+        });
+
+        // 12. ข้อมูลจำลอง (รองรับ monthKey ของเดือนที่เลือกอยู่)
+        function getDemoDataForMonth() {
+            const now = Date.now();
+            return [
+                {
+                    location: 'ไฟแสงสว่าง',
+                    subLocation: 'บ้าน 99/158',
+                    reporterName: 'ลูกบ้าน',
+                    description: 'ไฟกิ่งส่องสว่างริมถนนโครงการดับ',
+                    urgency: 'ด่วน',
+                    status: 'รอซ่อม',
+                    techNote: '',
+                    imageUrl: DEFAULT_LOCATION_IMAGES['ไฟแสงสว่าง'],
+                    createdAtMs: now - 3600000,
+                    updatedAtMs: now - 3600000,
+                    monthKey: selectedMonthKey
+                },
+                {
+                    location: 'ฟิตเนส',
+                    subLocation: 'คลับเฮาส์',
+                    reporterName: 'รปภ.',
+                    description: 'ลู่วิ่ง Error ไม่สามารถใช้งานได้',
+                    urgency: 'ปกติ',
+                    status: 'กำลังดำเนินการ',
+                    techNote: 'รออะไหล่จากศูนย์บริการ',
+                    imageUrl: DEFAULT_LOCATION_IMAGES['ฟิตเนส'],
+                    createdAtMs: now - 7200000,
+                    updatedAtMs: now - 3600000,
+                    monthKey: selectedMonthKey
+                }
+            ];
+        }
 
         function loadInitialDemoReportsInMemory() {
-            allReports = DEMO_LADDAROM_DATA.map((item, i) => ({ id: 'local-demo-'+i, ...item, createdAtMs: item.createdAtMs || now - (i*3600000*5), updatedAtMs: item.updatedAtMs || now - (i*3600000) }));
+            const demoItems = getDemoDataForMonth();
+            localFallbackStore = demoItems.map((item, i) => ({ id: 'local-demo-' + Date.now() + '-' + i, ...item }));
         }
 
         window.seedDemoReports = async () => {
+            const demoItems = getDemoDataForMonth();
             try {
                 if (!isUsingLocalFallback) {
-                    for (let i=0; i<DEMO_LADDAROM_DATA.length; i++) {
-                        await addDoc(getReportsCollectionRef(), { ...DEMO_LADDAROM_DATA[i], createdAtMs: DEMO_LADDAROM_DATA[i].createdAtMs || now, updatedAtMs: DEMO_LADDAROM_DATA[i].updatedAtMs || now });
+                    for (let i = 0; i < demoItems.length; i++) {
+                        await addDoc(getReportsCollectionRef(), demoItems[i]);
                     }
                 } else {
-                    loadInitialDemoReportsInMemory(); renderAllViews();
+                    loadInitialDemoReportsInMemory();
+                    allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
+                    renderAllViews();
                 }
-                showToast('เพิ่มข้อมูลจำลองสำเร็จ');
-            } catch(e) { loadInitialDemoReportsInMemory(); renderAllViews(); showToast('แสดงข้อมูลจำลอง (โหมดออฟไลน์)', 'info'); }
+                showToast(`เพิ่มข้อมูลจำลองในเดือน ${formatThaiMonthLabel(selectedMonthKey)} สำเร็จ`);
+            } catch (e) {
+                loadInitialDemoReportsInMemory();
+                allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
+                renderAllViews();
+                showToast('แสดงข้อมูลจำลอง (โหมดสาธิต)', 'info');
+            }
         };
 
         window.exportReportsCSV = () => {
-            if(allReports.length === 0) { showToast('ไม่มีข้อมูล', 'error'); return; }
-            const csv = '\uFEFF' + ['ลำดับ,สถานที่,รายละเอียด,ความด่วน,สถานะ,หมายเหตุ,วันที่แจ้ง', ...allReports.map((r,i) => `${i+1},"${r.location}","${r.description}","${r.urgency}","${r.status}","${r.techNote||''}","${formatThaiDateTime(r.createdAtMs)}"` )].join('\n');
-            const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'})); link.download = `laddarom-maintenance.csv`; link.click();
+            if (allReports.length === 0) {
+                showToast('ไม่มีข้อมูลในเดือนที่เลือกสำหรับส่งออก', 'error');
+                return;
+            }
+            const csv = '\uFEFF' + [
+                'ลำดับ,ประจำเดือน,สถานที่,จุดสังเกต,รายละเอียด,ความด่วน,สถานะ,หมายเหตุช่าง,วันที่แจ้ง',
+                ...allReports.map((r, i) => `${i + 1},"${r.monthKey || selectedMonthKey}","${r.location}","${r.subLocation || ''}","${r.description}","${r.urgency}","${r.status}","${r.techNote || ''}","${formatThaiDateTime(r.createdAtMs)}"`)
+            ].join('\n');
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+            link.download = `laddarom-maintenance-${selectedMonthKey}.csv`;
+            link.click();
         };
 
         window.addEventListener('DOMContentLoaded', initAuthAndRealtimeListener);
