@@ -69,6 +69,15 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        /* สำหรับระบบซูมและลากภาพใน Lightbox */
+        .zoom-viewport {
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .zoom-image-smooth {
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col bg-zinc-50 text-zinc-900 selection:bg-zinc-900 selection:text-white">
@@ -668,11 +677,85 @@
         </div>
     </div>
 
-    <!-- MODAL 3: Image Lightbox ดูภาพขยาย -->
-    <div id="lightboxModal" onclick="window.closeLightbox()" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 cursor-zoom-out">
-        <div class="relative max-w-3xl w-full flex flex-col items-center">
-            <img id="lightboxImage" src="" alt="Full size" class="max-h-[80vh] w-auto rounded-2xl shadow-2xl border border-white/15 object-contain">
-            <p id="lightboxCaption" class="text-xs text-zinc-300 mt-3 bg-zinc-900/80 px-4 py-1.5 rounded-full"></p>
+    <!-- MODAL 3: Image Lightbox ดูภาพขยายพร้อมระบบถ่างนิ้วซูม (Pinch-to-Zoom & Zinc Theme) -->
+    <div id="lightboxModal" onclick="if(event.target === this) window.closeLightbox()" class="fixed inset-0 z-50 hidden bg-zinc-950/80 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4">
+        <div id="lightboxDialog" class="bg-white rounded-2xl max-w-2xl w-full border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] transition-all duration-200 animate-[fadeIn_0.15s_ease-out]">
+            
+            <!-- Top Instruction Banner (Dark Zinc) -->
+            <div class="px-4 py-3 bg-zinc-900 text-white flex items-center justify-between gap-2 flex-shrink-0">
+                <div class="flex items-center gap-2 text-xs sm:text-sm font-semibold">
+                    <i class="fa-solid fa-magnifying-glass-plus text-amber-400 text-sm"></i>
+                    <span>ใช้นิ้วถ่างซูมที่ภาพได้ทันที หรือแตะเพื่อขยายเต็มจอ</span>
+                </div>
+                <button type="button" onclick="window.closeLightbox()" title="ปิดหน้าต่าง" class="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white flex items-center justify-center transition cursor-pointer flex-shrink-0">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div id="lightboxBody" class="p-3 sm:p-4 bg-zinc-100/80 flex-1 flex flex-col gap-3 overflow-y-auto">
+                
+                <!-- Image Card & Zoom Toolbar -->
+                <div class="bg-white rounded-2xl border border-zinc-200/90 shadow-xs overflow-hidden flex flex-col flex-1">
+                    
+                    <!-- Control Bar (Zinc Theme) -->
+                    <div class="px-3 py-2.5 border-b border-zinc-100 flex flex-wrap items-center justify-between gap-2 bg-white flex-shrink-0">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <div class="w-7 h-7 rounded-lg bg-zinc-100 text-zinc-800 flex items-center justify-center flex-shrink-0 border border-zinc-200">
+                                <i class="fa-solid fa-camera text-xs"></i>
+                            </div>
+                            <div class="truncate">
+                                <span id="lightboxLocationTitle" class="text-xs sm:text-sm font-bold text-zinc-900 block truncate">ภาพถ่ายหน้างาน</span>
+                            </div>
+                        </div>
+
+                        <!-- Zoom Action Buttons (Zinc Palette) -->
+                        <div class="flex items-center gap-1.5 ml-auto">
+                            <button type="button" onclick="window.adjustLightboxZoom(-0.25)" title="ซูมออก" class="w-8 h-8 rounded-xl bg-zinc-100 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-800 border border-zinc-200 flex items-center justify-center text-xs font-bold transition cursor-pointer">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            
+                            <span id="lightboxZoomPercent" class="px-2.5 py-1 rounded-xl bg-zinc-100 text-zinc-900 border border-zinc-200 text-xs font-bold min-w-[54px] text-center select-none">
+                                100%
+                            </span>
+                            
+                            <button type="button" onclick="window.adjustLightboxZoom(0.25)" title="ซูมเข้า" class="w-8 h-8 rounded-xl bg-zinc-100 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-800 border border-zinc-200 flex items-center justify-center text-xs font-bold transition cursor-pointer">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                            
+                            <button type="button" onclick="window.resetLightboxZoom()" class="px-2.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 border border-zinc-200 text-xs font-semibold transition cursor-pointer">
+                                รีเซ็ต
+                            </button>
+                            
+                            <button type="button" id="btnToggleFullscreen" onclick="window.toggleLightboxFullscreen()" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-950 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer">
+                                <i id="fullscreenIcon" class="fa-solid fa-expand text-[11px]"></i>
+                                <span id="fullscreenText">เต็มจอ</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Pinch-to-Zoom & Pan Viewport -->
+                    <div id="lightboxViewport" class="zoom-viewport relative w-full h-[52vh] sm:h-[58vh] bg-zinc-950 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing flex-1">
+                        <img 
+                            id="lightboxImage" 
+                            src="" 
+                            alt="Full size" 
+                            draggable="false"
+                            class="max-h-full max-w-full object-contain origin-center select-none pointer-events-none zoom-image-smooth"
+                        >
+                    </div>
+                </div>
+
+                <!-- Report Description & Technician Note Footer -->
+                <div id="lightboxFooterInfo" class="bg-white px-4 py-3 rounded-xl border border-zinc-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2 flex-shrink-0">
+                    <div class="space-y-0.5">
+                        <p id="lightboxCaption" class="text-xs sm:text-sm font-semibold text-zinc-900 leading-relaxed"></p>
+                        <p id="lightboxSubMeta" class="text-[11px] text-zinc-500"></p>
+                    </div>
+                    <div id="lightboxStatusBadge" class="self-start sm:self-center flex-shrink-0"></div>
+                </div>
+
+            </div>
         </div>
     </div>
 
@@ -1472,17 +1555,204 @@
             }
         };
 
+        // =====================================================
+        // ระบบ Lightbox Pinch-to-Zoom, Pan & Fullscreen
+        // =====================================================
+        let lbScale = 1;
+        let lbTranslateX = 0;
+        let lbTranslateY = 0;
+        let isLbDragging = false;
+        let lbStartX = 0;
+        let lbStartY = 0;
+        let initialPinchDistance = null;
+        let initialPinchScale = 1;
+        let lastTapTime = 0;
+        let isLbFullscreen = false;
+
+        const lbModal = document.getElementById('lightboxModal');
+        const lbDialog = document.getElementById('lightboxDialog');
+        const lbViewport = document.getElementById('lightboxViewport');
+        const lbImage = document.getElementById('lightboxImage');
+        const lbPercentBadge = document.getElementById('lightboxZoomPercent');
+
+        function updateLightboxTransform(smooth = true) {
+            if (smooth) {
+                lbImage.classList.add('zoom-image-smooth');
+            } else {
+                lbImage.classList.remove('zoom-image-smooth');
+            }
+            lbImage.style.transform = `translate3d(${lbTranslateX}px, ${lbTranslateY}px, 0) scale(${lbScale})`;
+            if (lbPercentBadge) {
+                lbPercentBadge.textContent = `${Math.round(lbScale * 100)}%`;
+            }
+        }
+
+        window.adjustLightboxZoom = (delta) => {
+            const nextScale = Math.min(Math.max(1, lbScale + delta), 5);
+            lbScale = nextScale;
+            if (lbScale <= 1) {
+                lbTranslateX = 0;
+                lbTranslateY = 0;
+            }
+            updateLightboxTransform(true);
+        };
+
+        window.resetLightboxZoom = () => {
+            lbScale = 1;
+            lbTranslateX = 0;
+            lbTranslateY = 0;
+            updateLightboxTransform(true);
+        };
+
+        function applyFullscreenUIState(full) {
+            isLbFullscreen = full;
+            const icon = document.getElementById('fullscreenIcon');
+            const text = document.getElementById('fullscreenText');
+            const footer = document.getElementById('lightboxFooterInfo');
+
+            if (isLbFullscreen) {
+                lbModal.classList.remove('p-2.5', 'sm:p-4');
+                lbDialog.classList.remove('max-w-2xl', 'rounded-2xl', 'max-h-[92vh]', 'border');
+                lbDialog.classList.add('w-screen', 'h-screen', 'max-h-screen', 'rounded-none');
+                lbViewport.classList.remove('h-[52vh]', 'sm:h-[58vh]');
+                lbViewport.classList.add('h-[75vh]');
+                if (footer) footer.classList.add('hidden');
+                if (icon) icon.className = 'fa-solid fa-compress text-[11px]';
+                if (text) text.textContent = 'ย่อจอ';
+            } else {
+                lbModal.classList.add('p-2.5', 'sm:p-4');
+                lbDialog.classList.add('max-w-2xl', 'rounded-2xl', 'max-h-[92vh]', 'border');
+                lbDialog.classList.remove('w-screen', 'h-screen', 'max-h-screen', 'rounded-none');
+                lbViewport.classList.add('h-[52vh]', 'sm:h-[58vh]');
+                lbViewport.classList.remove('h-[75vh]');
+                if (footer) footer.classList.remove('hidden');
+                if (icon) icon.className = 'fa-solid fa-expand text-[11px]';
+                if (text) text.textContent = 'เต็มจอ';
+            }
+        }
+
+        window.toggleLightboxFullscreen = () => {
+            applyFullscreenUIState(!isLbFullscreen);
+        };
+
         window.openLightbox = (id) => {
             const r = allReports.find(x => x.id === id);
             if (!r) return;
-            document.getElementById('lightboxImage').src = r.imageUrl || DEFAULT_LOCATION_IMAGES[r.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
-            document.getElementById('lightboxCaption').textContent = r.description;
-            document.getElementById('lightboxModal').classList.remove('hidden');
+
+            const imgUrl = r.imageUrl || DEFAULT_LOCATION_IMAGES[r.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
+            lbImage.src = imgUrl;
+
+            const locTitle = r.subLocation ? `${r.location} (${r.subLocation})` : r.location;
+            document.getElementById('lightboxLocationTitle').textContent = locTitle || 'ภาพถ่ายหน้างาน';
+            document.getElementById('lightboxCaption').textContent = r.description || '-';
+            document.getElementById('lightboxSubMeta').textContent = `${r.techNote ? `บันทึกช่าง: ${r.techNote} • ` : ''}แจ้งเมื่อ ${formatThaiDateTime(r.createdAtMs)}`;
+            document.getElementById('lightboxStatusBadge').innerHTML = getStatusBadgeHTML(r.status);
+
+            window.resetLightboxZoom();
+            applyFullscreenUIState(false);
+            lbModal.classList.remove('hidden');
         };
 
         window.closeLightbox = () => {
-            document.getElementById('lightboxModal').classList.add('hidden');
+            lbModal.classList.add('hidden');
+            window.resetLightboxZoom();
+            applyFullscreenUIState(false);
         };
+
+        // ระบบ Touch Gestures (Pinch-to-Zoom 2 นิ้ว, Pan 1 นิ้ว และ Double-Tap)
+        function getTouchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.hypot(dx, dy);
+        }
+
+        lbViewport.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                isLbDragging = false;
+                initialPinchDistance = getTouchDistance(e.touches);
+                initialPinchScale = lbScale;
+            } else if (e.touches.length === 1) {
+                const now = Date.now();
+                // ตรวจจับการแตะ 2 ครั้งติดกัน (Double Tap) เพื่อซูมด่วนหรือรีเซ็ต
+                if (now - lastTapTime < 280) {
+                    e.preventDefault();
+                    if (lbScale > 1.05) {
+                        window.resetLightboxZoom();
+                    } else {
+                        lbScale = 2.5;
+                        lbTranslateX = 0;
+                        lbTranslateY = 0;
+                        updateLightboxTransform(true);
+                    }
+                    lastTapTime = 0;
+                    return;
+                }
+                lastTapTime = now;
+
+                if (lbScale > 1) {
+                    isLbDragging = true;
+                    lbStartX = e.touches[0].clientX - lbTranslateX;
+                    lbStartY = e.touches[0].clientY - lbTranslateY;
+                }
+            }
+        }, { passive: false });
+
+        lbViewport.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialPinchDistance) {
+                e.preventDefault();
+                const currentDist = getTouchDistance(e.touches);
+                const ratio = currentDist / initialPinchDistance;
+                lbScale = Math.min(Math.max(1, initialPinchScale * ratio), 5);
+                if (lbScale <= 1) {
+                    lbTranslateX = 0;
+                    lbTranslateY = 0;
+                }
+                updateLightboxTransform(false);
+            } else if (e.touches.length === 1 && isLbDragging && lbScale > 1) {
+                e.preventDefault();
+                lbTranslateX = e.touches[0].clientX - lbStartX;
+                lbTranslateY = e.touches[0].clientY - lbStartY;
+                updateLightboxTransform(false);
+            }
+        }, { passive: false });
+
+        lbViewport.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                initialPinchDistance = null;
+            }
+            if (e.touches.length === 0) {
+                isLbDragging = false;
+                if (lbScale <= 1.02) {
+                    window.resetLightboxZoom();
+                }
+            }
+        });
+
+        // รองรับการซูมด้วยลูกกลิ้งเมาส์และคลิกลากบนคอมพิวเตอร์ (Desktop Support)
+        lbViewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.25 : -0.25;
+            window.adjustLightboxZoom(delta);
+        }, { passive: false });
+
+        lbViewport.addEventListener('mousedown', (e) => {
+            if (lbScale <= 1) return;
+            isLbDragging = true;
+            lbStartX = e.clientX - lbTranslateX;
+            lbStartY = e.clientY - lbTranslateY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isLbDragging || lbScale <= 1) return;
+            lbTranslateX = e.clientX - lbStartX;
+            lbTranslateY = e.clientY - lbStartY;
+            updateLightboxTransform(false);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isLbDragging = false;
+        });
 
         window.setStatusFilter = (s) => {
             activeStatusFilter = s;
