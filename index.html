@@ -332,11 +332,11 @@
                         ></textarea>
                     </div>
 
-                    <!-- 4. ระบบอัปโหลดรูปภาพ (Firebase Storage + Auto-Compress Fallback) -->
+                    <!-- 4. ระบบอัปโหลดรูปภาพ -->
                     <div>
                         <div class="flex items-center justify-between mb-2">
                             <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700">
-                                4. รูปถ่ายหน้างาน (รองรับการแนบรูปและพรีวิวทันที)
+                                4. รูปถ่ายหน้างาน (อัปโหลดผ่านฐานข้อมูลโดยตรง)
                             </label>
                             <span class="text-[11px] text-zinc-400">รองรับ JPG, PNG, WEBP</span>
                         </div>
@@ -375,11 +375,11 @@
                         <!-- Upload Progress Bar (Shown during submit) -->
                         <div id="uploadProgressWrapper" class="hidden mt-3 bg-zinc-100 rounded-xl p-3 border border-zinc-200">
                             <div class="flex items-center justify-between text-xs font-medium text-zinc-700 mb-1.5">
-                                <span id="uploadProgressStatus"><i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-bounce"></i>กำลังประมวลผลและบันทึกรูปภาพ...</span>
-                                <span id="uploadProgressPercent">0%</span>
+                                <span id="uploadProgressStatus"><i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-bounce"></i>กำลังอัปโหลดรูปภาพเข้าฐานข้อมูล...</span>
+                                <span id="uploadProgressPercent">35%</span>
                             </div>
                             <div class="w-full h-1.5 bg-zinc-200 rounded-full overflow-hidden">
-                                <div id="uploadProgressBar" class="h-full bg-zinc-900 transition-all duration-300" style="width: 0%"></div>
+                                <div id="uploadProgressBar" class="h-full bg-zinc-900 transition-all duration-300" style="width: 35%"></div>
                             </div>
                         </div>
                     </div>
@@ -411,20 +411,26 @@
         <!-- ========================================== -->
         <section id="tab-dashboard" class="tab-section hidden space-y-6">
             <!-- Dashboard Title & Quick Tools -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm">
                 <div>
                     <div class="flex items-center gap-2">
                         <span class="px-2.5 py-0.5 rounded-md bg-zinc-900 text-white text-[11px] font-semibold tracking-wide uppercase">Juristic Console</span>
-                        <h2 class="text-lg font-bold text-zinc-900">แดชบอร์ดนิติบุคคล หมู่บ้านลัดดารมย์</h2>
+                        <h2 class="text-lg font-bold text-zinc-900">แดชบอร์ดนิติบุคคล</h2>
                     </div>
                     <p class="text-xs text-zinc-500 mt-1">สรุปสถิติงานซ่อมบำรุงแบบ Real-time และตารางบริหารจัดการสำหรับเจ้าหน้าที่</p>
                 </div>
-                <div class="flex items-center gap-2">
+                
+                <!-- Action Buttons: เพิ่มปุ่มล้างข้อมูลเก่าตรงนี้ -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="window.openCleanupModal()" class="px-3.5 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                        <i class="fa-solid fa-broom"></i>
+                        <span>ล้างรูปงานเก่า (>60วัน)</span>
+                    </button>
                     <button onclick="window.seedDemoReports()" class="px-3.5 py-2 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 text-xs font-medium transition flex items-center gap-1.5 cursor-pointer">
                         <i class="fa-solid fa-database"></i>
-                        <span>เพิ่มข้อมูลจำลอง</span>
+                        <span class="hidden sm:inline">เพิ่มข้อมูลจำลอง</span>
                     </button>
-                    <button onclick="window.exportReportsCSV()" class="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition flex items-center gap-1.5 cursor-pointer">
+                    <button onclick="window.exportReportsCSV()" class="px-3.5 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-sm">
                         <i class="fa-solid fa-file-csv"></i>
                         <span>ส่งออก CSV</span>
                     </button>
@@ -537,37 +543,20 @@
     <!-- Fixed Bottom Navigation Bar (3 Main Tabs) -->
     <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-zinc-200 shadow-lg">
         <div class="max-w-lg mx-auto px-3 h-16 grid grid-cols-3 gap-1 items-center">
-            <!-- Tab 1 Button: รายการงาน -->
-            <button 
-                onclick="window.switchTab('list')" 
-                id="nav-btn-list" 
-                class="nav-tab-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-zinc-900 font-semibold transition cursor-pointer"
-            >
+            <button onclick="window.switchTab('list')" id="nav-btn-list" class="nav-tab-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-zinc-900 font-semibold transition cursor-pointer">
                 <div class="relative">
                     <i class="fa-solid fa-clipboard-list text-base mb-0.5"></i>
                     <span id="navBadgePending" class="hidden absolute -top-1.5 -right-3 px-1.5 py-0.2 min-w-[18px] h-[16px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">0</span>
                 </div>
                 <span class="text-[11px]">รายการงาน</span>
             </button>
-
-            <!-- Tab 2 Button: แจ้งซ่อมใหม่ -->
-            <button 
-                onclick="window.switchTab('add')" 
-                id="nav-btn-add" 
-                class="nav-tab-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-zinc-400 hover:text-zinc-700 font-medium transition cursor-pointer"
-            >
+            <button onclick="window.switchTab('add')" id="nav-btn-add" class="nav-tab-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-zinc-400 hover:text-zinc-700 font-medium transition cursor-pointer">
                 <div class="w-9 h-9 rounded-full bg-zinc-900 text-white flex items-center justify-center shadow-md -mt-3 mb-0.5 border-2 border-white">
                     <i class="fa-solid fa-plus text-sm"></i>
                 </div>
                 <span class="text-[11px]">แจ้งซ่อมใหม่</span>
             </button>
-
-            <!-- Tab 3 Button: แดชบอร์ดนิติ -->
-            <button 
-                onclick="window.switchTab('dashboard')" 
-                id="nav-btn-dashboard" 
-                class="nav-tab-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-zinc-400 hover:text-zinc-700 font-medium transition cursor-pointer"
-            >
+            <button onclick="window.switchTab('dashboard')" id="nav-btn-dashboard" class="nav-tab-btn flex flex-col items-center justify-center py-1.5 rounded-xl text-zinc-400 hover:text-zinc-700 font-medium transition cursor-pointer">
                 <i class="fa-solid fa-chart-pie text-base mb-0.5"></i>
                 <span class="text-[11px]">แดชบอร์ดนิติ</span>
             </button>
@@ -575,108 +564,95 @@
     </nav>
 
     <!-- ========================================== -->
-    <!-- MODAL 1: แก้ไข/อัปเดตสถานะงานซ่อม             -->
+    <!-- MODALS SECTION                              -->
     <!-- ========================================== -->
+
+    <!-- MODAL 1: แก้ไข/อัปเดตสถานะงานซ่อม -->
     <div id="statusModal" class="fixed inset-0 z-50 hidden bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full border border-zinc-200 shadow-2xl overflow-hidden animate-[fadeIn_0.15s_ease-out]">
             <div class="px-5 py-4 bg-zinc-900 text-white flex items-center justify-between">
-                <h3 class="text-sm font-bold flex items-center gap-2">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                    <span>อัปเดตสถานะงานซ่อมบำรุง</span>
-                </h3>
-                <button onclick="window.closeStatusModal()" class="text-zinc-400 hover:text-white cursor-pointer">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+                <h3 class="text-sm font-bold flex items-center gap-2"><i class="fa-solid fa-pen-to-square"></i><span>อัปเดตสถานะงานซ่อมบำรุง</span></h3>
+                <button onclick="window.closeStatusModal()" class="text-zinc-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-5 space-y-4">
                 <div class="bg-zinc-50 p-3 rounded-xl border border-zinc-200 text-xs space-y-1">
                     <div class="font-bold text-zinc-900" id="modalReportLocation">-</div>
                     <div class="text-zinc-600 line-clamp-2" id="modalReportDesc">-</div>
                 </div>
-
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-2">เลือกสถานะใหม่</label>
                     <div class="space-y-2">
                         <label class="flex items-center justify-between p-3 rounded-xl border border-zinc-200 cursor-pointer hover:bg-red-50/40 transition">
-                            <div class="flex items-center gap-2.5">
-                                <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                                <span class="text-sm font-semibold text-zinc-900">รอซ่อม</span>
-                            </div>
+                            <div class="flex items-center gap-2.5"><span class="w-3 h-3 rounded-full bg-red-500"></span><span class="text-sm font-semibold text-zinc-900">รอซ่อม</span></div>
                             <input type="radio" name="modalStatusRadio" value="รอซ่อม" class="w-4 h-4 accent-zinc-900">
                         </label>
-
                         <label class="flex items-center justify-between p-3 rounded-xl border border-zinc-200 cursor-pointer hover:bg-amber-50/40 transition">
-                            <div class="flex items-center gap-2.5">
-                                <span class="w-3 h-3 rounded-full bg-amber-500"></span>
-                                <span class="text-sm font-semibold text-zinc-900">กำลังดำเนินการ</span>
-                            </div>
+                            <div class="flex items-center gap-2.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span><span class="text-sm font-semibold text-zinc-900">กำลังดำเนินการ</span></div>
                             <input type="radio" name="modalStatusRadio" value="กำลังดำเนินการ" class="w-4 h-4 accent-zinc-900">
                         </label>
-
                         <label class="flex items-center justify-between p-3 rounded-xl border border-zinc-200 cursor-pointer hover:bg-emerald-50/40 transition">
-                            <div class="flex items-center gap-2.5">
-                                <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-                                <span class="text-sm font-semibold text-zinc-900">เสร็จสิ้น</span>
-                            </div>
+                            <div class="flex items-center gap-2.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span><span class="text-sm font-semibold text-zinc-900">เสร็จสิ้น</span></div>
                             <input type="radio" name="modalStatusRadio" value="เสร็จสิ้น" class="w-4 h-4 accent-zinc-900">
                         </label>
                     </div>
                 </div>
-
                 <div>
-                    <label for="modalTechNote" class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">
-                        หมายเหตุช่าง / การแก้ไข (ถ้ามี)
-                    </label>
-                    <input 
-                        type="text" 
-                        id="modalTechNote" 
-                        placeholder="เช่น เปลี่ยนหลอดไฟกิ่งหน้าบ้าน 99/158 เรียบร้อยแล้ว..."
-                        class="w-full bg-zinc-50 border border-zinc-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-zinc-900"
-                    >
+                    <label for="modalTechNote" class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">หมายเหตุช่าง / การแก้ไข (ถ้ามี)</label>
+                    <input type="text" id="modalTechNote" placeholder="เช่น เปลี่ยนหลอดไฟกิ่งหน้าบ้าน 99/158 เรียบร้อยแล้ว..." class="w-full bg-zinc-50 border border-zinc-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-zinc-900">
                 </div>
-
                 <div class="pt-2 flex items-center gap-2.5">
-                    <button onclick="window.closeStatusModal()" class="flex-1 py-2.5 rounded-xl border border-zinc-300 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer">
-                        ยกเลิก
-                    </button>
-                    <button onclick="window.confirmUpdateStatus()" id="btnConfirmStatusUpdate" class="flex-1 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold cursor-pointer">
-                        บันทึกสถานะ
-                    </button>
+                    <button onclick="window.closeStatusModal()" class="flex-1 py-2.5 rounded-xl border border-zinc-300 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer">ยกเลิก</button>
+                    <button onclick="window.confirmUpdateStatus()" id="btnConfirmStatusUpdate" class="flex-1 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold cursor-pointer">บันทึกสถานะ</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- MODAL 2: ยืนยันการลบข้อมูล (Delete Modal)     -->
-    <!-- ========================================== -->
+    <!-- MODAL 2: ยืนยันการลบข้อมูล (Delete Modal) -->
     <div id="deleteModal" class="fixed inset-0 z-50 hidden bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-sm w-full border border-zinc-200 shadow-2xl p-5 text-center space-y-4 animate-[fadeIn_0.15s_ease-out]">
-            <div class="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
-                <i class="fa-solid fa-trash-can text-lg"></i>
-            </div>
+            <div class="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto"><i class="fa-solid fa-trash-can text-lg"></i></div>
             <div>
                 <h3 class="text-base font-bold text-zinc-900">ยืนยันการลบรายการแจ้งซ่อม?</h3>
                 <p id="deleteModalInfo" class="text-xs text-zinc-500 mt-1">ข้อมูลที่ถูกลบจะไม่สามารถกู้คืนได้</p>
             </div>
             <div class="flex items-center gap-2.5 pt-1">
-                <button onclick="window.closeDeleteModal()" class="flex-1 py-2.5 rounded-xl border border-zinc-300 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer">
-                    ยกเลิก
-                </button>
-                <button onclick="window.confirmDeleteReport()" id="btnConfirmDelete" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold cursor-pointer">
-                    ลบข้อมูลทันที
-                </button>
+                <button onclick="window.closeDeleteModal()" class="flex-1 py-2.5 rounded-xl border border-zinc-300 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer">ยกเลิก</button>
+                <button onclick="window.confirmDeleteReport()" id="btnConfirmDelete" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold cursor-pointer">ลบข้อมูลทันที</button>
             </div>
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- MODAL 3: Image Lightbox ดูภาพขยาย           -->
-    <!-- ========================================== -->
+    <!-- MODAL 3: Image Lightbox ดูภาพขยาย -->
     <div id="lightboxModal" onclick="window.closeLightbox()" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 cursor-zoom-out">
         <div class="relative max-w-3xl w-full flex flex-col items-center">
             <img id="lightboxImage" src="" alt="Full size" class="max-h-[80vh] w-auto rounded-2xl shadow-2xl border border-white/15 object-contain">
             <p id="lightboxCaption" class="text-xs text-zinc-300 mt-3 bg-zinc-900/80 px-4 py-1.5 rounded-full"></p>
+        </div>
+    </div>
+
+    <!-- MODAL 4: ยืนยันการเคลียร์รูปภาพงานเก่า (Cleanup Modal) -->
+    <div id="cleanupModal" class="fixed inset-0 z-50 hidden bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full border border-zinc-200 shadow-2xl p-5 text-center space-y-4 animate-[fadeIn_0.15s_ease-out]">
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-100">
+                <i class="fa-solid fa-broom text-lg"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-zinc-900">ล้างรูปภาพงานเก่าเพื่อคืนพื้นที่?</h3>
+                <p class="text-xs text-zinc-600 mt-2 leading-relaxed">
+                    ระบบจะทำการลบ <span class="font-bold text-red-600">"รูปภาพที่แนบมา"</span> เฉพาะงานที่ซ่อมเสร็จสิ้นไปแล้วเกิน 60 วัน เพื่อประหยัดพื้นที่จัดเก็บข้อมูล<br>
+                    <span class="text-[11px] text-zinc-400">(ข้อมูลข้อความและประวัติการซ่อมจะยังอยู่ครบถ้วน)</span>
+                </p>
+                <div id="cleanupModalCount" class="mt-3 inline-block px-3 py-1 rounded-full bg-zinc-100 text-zinc-700 text-xs font-semibold border border-zinc-200">
+                    กำลังคำนวณ...
+                </div>
+            </div>
+            <div class="flex items-center gap-2.5 pt-1">
+                <button onclick="window.closeCleanupModal()" class="flex-1 py-2.5 rounded-xl border border-zinc-300 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer">ยกเลิก</button>
+                <button onclick="window.confirmCleanup()" id="btnConfirmCleanup" class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold cursor-pointer">
+                    ยืนยันล้างข้อมูล
+                </button>
+            </div>
         </div>
     </div>
 
@@ -685,28 +661,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            signInAnonymously, 
-            signInWithCustomToken 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            doc, 
-            addDoc, 
-            updateDoc, 
-            deleteDoc, 
-            onSnapshot 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { 
-            getStorage, 
-            ref as storageRef, 
-            uploadBytes, 
-            getDownloadURL 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // 1. การตั้งค่า Firebase Config ของโปรเจกต์ time-attendance-69699
+        // 1. การตั้งค่า Firebase Config
         const userFirebaseConfig = {
             apiKey: "AIzaSyCXuj7Pl1JnBn2Y7BtyzkHHQm4MQH-isrM",
             authDomain: "time-attendance-69699.firebaseapp.com",
@@ -715,24 +673,13 @@
             messagingSenderId: "793986547170",
             appId: "1:793986547170:web:337bfe602d9b3e32f34dbb"
         };
+        const appId = 'laddarom-maintenance-app';
 
-        const activeFirebaseConfig = typeof __firebase_config !== 'undefined' 
-            ? JSON.parse(__firebase_config) 
-            : userFirebaseConfig;
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'laddarom-maintenance-app';
-
-        // Initialize Firebase Services
-        const app = initializeApp(activeFirebaseConfig);
+        const app = initializeApp(userFirebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const storage = getStorage(app);
 
-        // ป้องกัน Firebase Storage ค้างนานเกินไปหากยังไม่ได้เปิดใช้งาน Storage ใน Console
-        storage.maxUploadRetryTime = 2500;
-        storage.maxOperationRetryTime = 2500;
-
-        // 2. State Management ของแอปพลิเคชัน
+        // 2. State Management
         let currentUser = null;
         let allReports = [];
         let currentTab = 'list';
@@ -743,10 +690,10 @@
         let selectedImagePreviewDataUrl = null;
         let editingReportId = null;
         let deletingReportId = null;
+        let eligibleForCleanup = [];
         let unsubscribeFirestore = null;
         let isUsingLocalFallback = false;
 
-        // Default architectural placeholder images by category
         const DEFAULT_LOCATION_IMAGES = {
             'อาคารนิติ': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
             'ซาวน่า': 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80',
@@ -755,7 +702,6 @@
             'อื่นๆ': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80'
         };
 
-        // Helper: ตัดเวลาการทำงานของ Promise ไม่ให้หน้าเว็บค้าง (Timeout Wrapper)
         function withTimeout(promise, ms = 2500, timeoutMsg = 'Operation timed out') {
             return Promise.race([
                 promise,
@@ -763,317 +709,162 @@
             ]);
         }
 
-        // 3. Helper: แสดง Toast แจ้งเตือน
+        // 3. Helper: Toast & Date Formatter
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            const colorMap = {
-                success: 'bg-zinc-900 text-white border-zinc-800',
-                error: 'bg-red-600 text-white border-red-700',
-                info: 'bg-white text-zinc-900 border-zinc-200'
-            };
-            const iconMap = {
-                success: 'fa-circle-check text-emerald-400',
-                error: 'fa-circle-exclamation text-white',
-                info: 'fa-circle-info text-zinc-700'
-            };
-
-            toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg text-xs font-medium transition-all duration-300 ${colorMap[type] || colorMap.success}`;
-            toast.innerHTML = `
-                <i class="fa-solid ${iconMap[type] || iconMap.success} text-sm"></i>
-                <span class="flex-1 leading-snug">${message}</span>
-            `;
+            const colorMap = { success: 'bg-zinc-900 text-white', error: 'bg-red-600 text-white', info: 'bg-white text-zinc-900 border-zinc-200' };
+            const iconMap = { success: 'fa-circle-check text-emerald-400', error: 'fa-circle-exclamation text-white', info: 'fa-circle-info text-zinc-700' };
+            
+            toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg text-xs font-medium transition-all duration-300 ${colorMap[type] || colorMap.success}`;
+            toast.innerHTML = `<i class="fa-solid ${iconMap[type] || iconMap.success} text-sm"></i><span class="flex-1">${message}</span>`;
             container.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(-8px)';
-                setTimeout(() => toast.remove(), 250);
-            }, 3500);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-8px)'; setTimeout(() => toast.remove(), 250); }, 3500);
         }
 
-        // Helper: แปลง Timestamp เป็นวันเวลาภาษาไทย
         function formatThaiDateTime(timestampMs) {
-            if (!timestampMs) return 'เมื่อสักครู่';
-            try {
-                const date = new Date(timestampMs);
-                return date.toLocaleDateString('th-TH', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }) + ' น.';
-            } catch (e) {
-                return 'ไม่ระบุเวลา';
-            }
+            if (!timestampMs) return 'ไม่ระบุเวลา';
+            try { return new Date(timestampMs).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }) + ' น.'; } 
+            catch (e) { return 'ไม่ระบุเวลา'; }
         }
 
-        // Helper: คืนค่า Badge สีตามสถานะที่กำหนด
         function getStatusBadgeHTML(status) {
-            if (status === 'รอซ่อม') {
-                return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-                    <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>รอซ่อม
-                </span>`;
-            }
-            if (status === 'กำลังดำเนินการ') {
-                return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>กำลังดำเนินการ
-                </span>`;
-            }
-            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>เสร็จสิ้น
-            </span>`;
+            if (status === 'รอซ่อม') return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200"><span class="w-1.5 h-1.5 rounded-full bg-red-600"></span>รอซ่อม</span>`;
+            if (status === 'กำลังดำเนินการ') return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>กำลังดำเนินการ</span>`;
+            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>เสร็จสิ้น</span>`;
         }
 
-        // Helper: คืนค่าป้ายระดับความด่วน
         function getUrgencyBadgeHTML(urgency) {
-            if (urgency === 'ด่วนมาก') {
-                return `<span class="px-2 py-0.5 rounded-md bg-red-600 text-white text-[10px] font-bold tracking-wide">ด่วนมาก</span>`;
-            }
-            if (urgency === 'ด่วน') {
-                return `<span class="px-2 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-bold tracking-wide">ด่วน</span>`;
-            }
+            if (urgency === 'ด่วนมาก') return `<span class="px-2 py-0.5 rounded-md bg-red-600 text-white text-[10px] font-bold">ด่วนมาก</span>`;
+            if (urgency === 'ด่วน') return `<span class="px-2 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-bold">ด่วน</span>`;
             return `<span class="px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200 text-[10px] font-medium">ปกติ</span>`;
         }
 
-        // Helper: ย่อขนาดรูปภาพด้วย Canvas ให้มีขนาดเล็กแต่คมชัด (~60-120KB) เพื่อรองรับทั้ง Storage และ Firestore
-        function compressImageToDataUrl(file, maxWidth = 800, quality = 0.72) {
+        function compressImageToDataUrl(file, maxWidth = 800, quality = 0.6) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = (event) => {
+                reader.onload = (e) => {
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
-                        if (width > maxWidth) {
-                            height = Math.round((height * maxWidth) / width);
-                            width = maxWidth;
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
+                        let w = img.width, h = img.height;
+                        if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
+                        canvas.width = w; canvas.height = h;
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', quality));
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality)); // quality 0.6 for smaller size ~60KB
                     };
-                    img.onerror = reject;
-                    img.src = event.target.result;
+                    img.onerror = reject; img.src = e.target.result;
                 };
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
+                reader.onerror = reject; reader.readAsDataURL(file);
             });
         }
 
-        // 4. ระบบสลับแท็บแบบ Single Page Application (SPA)
+        // 4. ระบบสลับแท็บแบบ SPA
         window.switchTab = function(tabName) {
             currentTab = tabName;
-            const tabs = ['list', 'add', 'dashboard'];
-
-            tabs.forEach(t => {
+            ['list', 'add', 'dashboard'].forEach(t => {
                 const sectionEl = document.getElementById(`tab-${t}`);
                 const navBtn = document.getElementById(`nav-btn-${t}`);
                 if (t === tabName) {
                     sectionEl.classList.remove('hidden');
-                    navBtn.classList.remove('text-zinc-400', 'font-medium');
-                    navBtn.classList.add('text-zinc-900', 'font-semibold');
+                    navBtn.classList.add('text-zinc-900', 'font-semibold'); navBtn.classList.remove('text-zinc-400', 'font-medium');
                 } else {
                     sectionEl.classList.add('hidden');
-                    navBtn.classList.remove('text-zinc-900', 'font-semibold');
-                    navBtn.classList.add('text-zinc-400', 'font-medium');
+                    navBtn.classList.add('text-zinc-400', 'font-medium'); navBtn.classList.remove('text-zinc-900', 'font-semibold');
                 }
             });
-
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // 5. การเชื่อมต่อฐานข้อมูล Firestore แบบ Real-time
-        function getReportsCollectionRef() {
-            return collection(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports');
-        }
+        // 5. เชื่อมต่อ Firestore
+        function getReportsCollectionRef() { return collection(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports'); }
 
         function updateConnectionStatusUI(status, text) {
             const dot = document.getElementById('connectionDot');
-            const label = document.getElementById('connectionText');
-            label.textContent = text;
-            dot.className = 'w-2 h-2 rounded-full ';
-            if (status === 'online') {
-                dot.className += 'bg-emerald-500';
-            } else if (status === 'fallback') {
-                dot.className += 'bg-amber-500';
-            } else {
-                dot.className += 'bg-red-500';
-            }
+            document.getElementById('connectionText').textContent = text;
+            dot.className = `w-2 h-2 rounded-full ${status === 'online' ? 'bg-emerald-500' : (status === 'fallback' ? 'bg-amber-500' : 'bg-red-500')}`;
         }
 
         async function initAuthAndRealtimeListener() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
-                    currentUser = cred.user;
-                } else {
-                    const cred = await signInAnonymously(auth);
-                    currentUser = cred.user;
-                }
-            } catch (authError) {
-                // หากไม่ได้เปิด Anonymous Auth ใน Firebase Console ให้สร้างรหัสผู้ใช้ชั่วคราวเพื่อให้ใช้งานต่อได้ทันที
-                currentUser = { uid: 'laddarom-user-' + Date.now() };
-            }
+            try { currentUser = (await signInAnonymously(auth)).user; } 
+            catch (e) { currentUser = { uid: 'guest-' + Date.now() }; }
 
-            const reportsCol = getReportsCollectionRef();
-
-            unsubscribeFirestore = onSnapshot(
-                reportsCol,
-                (snapshot) => {
-                    isUsingLocalFallback = false;
-                    updateConnectionStatusUI('online', 'เชื่อมต่อฐานข้อมูลแล้ว');
-                    
-                    const fetched = [];
-                    snapshot.forEach((docSnap) => {
-                        fetched.push({
-                            id: docSnap.id,
-                            ...docSnap.data()
-                        });
-                    });
-
-                    // เรียงจากล่าสุดไปเก่าสุด (Newest to Oldest)
-                    allReports = fetched.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
-
-                    document.getElementById('listLoadingState').classList.add('hidden');
-                    renderAllViews();
-                },
-                (error) => {
-                    console.warn('Firestore Rules Notice:', error.message);
-                    isUsingLocalFallback = true;
-                    updateConnectionStatusUI('fallback', 'โหมดสาธิต (รอตั้งค่า Rules)');
-                    document.getElementById('listLoadingState').classList.add('hidden');
-                    if (allReports.length === 0) {
-                        loadInitialDemoReportsInMemory();
-                    }
-                    renderAllViews();
-                }
-            );
+            unsubscribeFirestore = onSnapshot(getReportsCollectionRef(), (snapshot) => {
+                isUsingLocalFallback = false;
+                updateConnectionStatusUI('online', 'เชื่อมต่อฐานข้อมูลแล้ว');
+                allReports = [];
+                snapshot.forEach(docSnap => allReports.push({ id: docSnap.id, ...docSnap.data() }));
+                allReports.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
+                document.getElementById('listLoadingState').classList.add('hidden');
+                renderAllViews();
+            }, (error) => {
+                isUsingLocalFallback = true;
+                updateConnectionStatusUI('fallback', 'โหมดสาธิต (รอตั้งค่า Rules)');
+                document.getElementById('listLoadingState').classList.add('hidden');
+                if (allReports.length === 0) loadInitialDemoReportsInMemory();
+                renderAllViews();
+            });
         }
 
-        // 6. ฟังก์ชัน Render หน้าจอรายการงาน (Tab 1) และ แดชบอร์ดนิติ (Tab 3)
+        // 6. ฟังก์ชัน Render
         function renderAllViews() {
             renderReportList();
             renderDashboard();
         }
 
+        function escapeHtml(str) { return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
+
         function renderReportList() {
             const container = document.getElementById('reportCardsContainer');
-            const emptyState = document.getElementById('listEmptyState');
-            const totalCountBadge = document.getElementById('listTotalCount');
-
-            const filtered = allReports.filter((item) => {
-                const matchStatus = activeStatusFilter === 'ALL' || item.status === activeStatusFilter;
-                const matchLocation = activeLocationFilter === 'ALL' || item.location === activeLocationFilter;
-                const queryText = `${item.location || ''} ${item.subLocation || ''} ${item.description || ''} ${item.reporterName || ''} ${item.techNote || ''}`.toLowerCase();
-                const matchSearch = !searchQuery || queryText.includes(searchQuery.toLowerCase());
-                return matchStatus && matchLocation && matchSearch;
+            const filtered = allReports.filter(item => {
+                const text = `${item.location||''} ${item.subLocation||''} ${item.description||''} ${item.reporterName||''} ${item.techNote||''}`.toLowerCase();
+                return (activeStatusFilter === 'ALL' || item.status === activeStatusFilter) &&
+                       (activeLocationFilter === 'ALL' || item.location === activeLocationFilter) &&
+                       (!searchQuery || text.includes(searchQuery.toLowerCase()));
             });
 
-            totalCountBadge.textContent = `${filtered.length} รายการ`;
-
+            document.getElementById('listTotalCount').textContent = `${filtered.length} รายการ`;
+            
             if (allReports.length === 0) {
-                container.innerHTML = '';
-                emptyState.classList.remove('hidden');
-                return;
+                container.innerHTML = ''; document.getElementById('listEmptyState').classList.remove('hidden'); return;
             }
-
-            emptyState.classList.add('hidden');
+            document.getElementById('listEmptyState').classList.add('hidden');
 
             if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="col-span-full bg-white rounded-2xl p-8 text-center border border-zinc-200/80">
-                        <i class="fa-solid fa-filter-circle-xmark text-2xl text-zinc-400 mb-2"></i>
-                        <p class="text-sm font-semibold text-zinc-800">ไม่พบรายการที่ตรงกับตัวกรอง</p>
-                        <p class="text-xs text-zinc-500 mt-0.5">ลองเปลี่ยนตัวกรองสถานะ หรือล้างคำค้นหา</p>
-                    </div>
-                `;
-                return;
+                container.innerHTML = `<div class="col-span-full bg-white rounded-2xl p-8 text-center border border-zinc-200/80"><p class="text-sm font-semibold text-zinc-800">ไม่พบรายการที่ตรงกับตัวกรอง</p></div>`; return;
             }
 
-            container.innerHTML = filtered.map((report) => {
+            container.innerHTML = filtered.map(report => {
                 const imgUrl = report.imageUrl || DEFAULT_LOCATION_IMAGES[report.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
-                const safeLocation = escapeHtml(report.location || 'ไม่ระบุสถานที่');
-                const safeSubLoc = escapeHtml(report.subLocation || '');
-                const safeDesc = escapeHtml(report.description || '-');
-                const safeReporter = escapeHtml(report.reporterName || 'ลูกบ้าน / เจ้าหน้าที่');
-                const safeTechNote = escapeHtml(report.techNote || '');
-
                 return `
-                    <article class="bg-white rounded-2xl border border-zinc-200/90 shadow-xs hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col">
-                        <!-- รูปภาพที่แนบมา -->
-                        <div class="relative h-48 w-full bg-zinc-100 overflow-hidden group cursor-zoom-in" onclick="window.openLightbox('${ report.id }')">
-                            <img 
-                                src="${imgUrl}" 
-                                alt="${safeLocation}" 
-                                loading="lazy"
-                                onerror="this.onerror=null;this.src='https://placehold.co/800x500/f4f4f5/52525b?text=Laddarom+Maintenance';"
-                                class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                            >
-                            <div class="absolute top-3 left-3 flex items-center gap-1.5">
-                                ${getUrgencyBadgeHTML(report.urgency)}
-                            </div>
-                            <div class="absolute top-3 right-3">
-                                ${getStatusBadgeHTML(report.status)}
-                            </div>
-                            <div class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition">
-                                <i class="fa-solid fa-magnifying-glass-plus mr-1"></i>ขยายรูป
-                            </div>
+                    <article class="bg-white rounded-2xl border border-zinc-200/90 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col">
+                        <div class="relative h-48 w-full bg-zinc-100 overflow-hidden cursor-zoom-in" onclick="window.openLightbox('${report.id}')">
+                            <img src="${imgUrl}" loading="lazy" onerror="this.src='https://placehold.co/800x500/f4f4f5/52525b?text=Laddarom';" class="w-full h-full object-cover hover:scale-105 transition duration-300">
+                            <div class="absolute top-3 left-3 flex items-center gap-1.5">${getUrgencyBadgeHTML(report.urgency)}</div>
+                            <div class="absolute top-3 right-3">${getStatusBadgeHTML(report.status)}</div>
                         </div>
-
-                        <!-- รายละเอียดงานซ่อม -->
                         <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
                             <div class="space-y-2">
-                                <div class="flex items-start justify-between gap-2">
-                                    <div>
-                                        <span class="text-xs font-bold uppercase tracking-wider text-zinc-900 bg-zinc-100 px-2.5 py-0.5 rounded-md border border-zinc-200">
-                                            <i class="fa-solid fa-location-dot mr-1 text-zinc-600"></i>${safeLocation}
-                                        </span>
-                                        ${safeSubLoc ? `<span class="text-xs text-zinc-500 ml-1.5">${safeSubLoc}</span>` : ''}
-                                    </div>
+                                <div>
+                                    <span class="text-xs font-bold uppercase text-zinc-900 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">${escapeHtml(report.location)}</span>
+                                    ${report.subLocation ? `<span class="text-xs text-zinc-500 ml-1">${escapeHtml(report.subLocation)}</span>` : ''}
                                 </div>
-
-                                <p class="text-sm text-zinc-800 leading-relaxed font-normal pt-1">${safeDesc}</p>
-
-                                ${safeTechNote ? `
-                                    <div class="bg-zinc-50 border border-zinc-200/80 rounded-xl p-2.5 text-xs text-zinc-600 flex items-start gap-2">
-                                        <i class="fa-solid fa-screwdriver-wrench text-zinc-500 mt-0.5"></i>
-                                        <div><span class="font-semibold text-zinc-800">บันทึกช่าง:</span> ${safeTechNote}</div>
-                                    </div>
-                                ` : ''}
+                                <p class="text-sm text-zinc-800 leading-relaxed">${escapeHtml(report.description)}</p>
+                                ${report.techNote ? `<div class="bg-zinc-50 border border-zinc-200/80 rounded-xl p-2.5 text-xs text-zinc-600"><span class="font-semibold text-zinc-800">บันทึกช่าง:</span> ${escapeHtml(report.techNote)}</div>` : ''}
                             </div>
-
-                            <!-- ข้อมูลเวลา & ปุ่มจัดการ -->
                             <div class="pt-3 border-t border-zinc-100 space-y-3">
                                 <div class="flex items-center justify-between text-[11px] text-zinc-400">
-                                    <span><i class="fa-regular fa-user mr-1"></i>${safeReporter}</span>
+                                    <span><i class="fa-regular fa-user mr-1"></i>${escapeHtml(report.reporterName || 'ไม่ระบุ')}</span>
                                     <span><i class="fa-regular fa-clock mr-1"></i>${formatThaiDateTime(report.createdAtMs)}</span>
                                 </div>
-
-                                <div class="flex items-center gap-2">
-                                    <button 
-                                        onclick="window.openStatusModal('${report.id}')" 
-                                        class="flex-1 py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition flex items-center justify-center gap-1.5 cursor-pointer"
-                                    >
-                                        <i class="fa-solid fa-arrows-rotate text-[11px]"></i>
-                                        <span>แก้ไข/อัปเดตสถานะ</span>
-                                    </button>
-                                    <button 
-                                        onclick="window.openDeleteModal('${report.id}')" 
-                                        class="py-2 px-3 rounded-xl border border-zinc-200 hover:border-red-200 hover:bg-red-50 text-zinc-500 hover:text-red-600 text-xs font-medium transition cursor-pointer"
-                                        title="ลบรายการ"
-                                    >
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
+                                <div class="flex gap-2">
+                                    <button onclick="window.openStatusModal('${report.id}')" class="flex-1 py-2 rounded-xl bg-zinc-900 text-white text-xs font-medium cursor-pointer"><i class="fa-solid fa-arrows-rotate mr-1"></i>อัปเดตสถานะ</button>
+                                    <button onclick="window.openDeleteModal('${report.id}')" class="px-3 py-2 rounded-xl border border-zinc-200 text-zinc-500 hover:bg-red-50 hover:text-red-600 cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </div>
                         </div>
-                    </article>
-                `;
+                    </article>`;
             }).join('');
         }
 
@@ -1082,533 +873,276 @@
             const pending = allReports.filter(r => r.status === 'รอซ่อม').length;
             const inProgress = allReports.filter(r => r.status === 'กำลังดำเนินการ').length;
             const completed = allReports.filter(r => r.status === 'เสร็จสิ้น').length;
-            const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
             document.getElementById('statTotal').textContent = total;
             document.getElementById('statPending').textContent = pending;
             document.getElementById('statInProgress').textContent = inProgress;
             document.getElementById('statCompleted').textContent = completed;
-            document.getElementById('statCompletionRate').textContent = `อัตราซ่อมสำเร็จ ${rate}%`;
+            document.getElementById('statCompletionRate').textContent = `อัตราซ่อมสำเร็จ ${total > 0 ? Math.round((completed/total)*100) : 0}%`;
 
             const navBadge = document.getElementById('navBadgePending');
-            if (pending > 0) {
-                navBadge.textContent = pending;
-                navBadge.classList.remove('hidden');
-            } else {
-                navBadge.classList.add('hidden');
-            }
+            if (pending > 0) { navBadge.textContent = pending; navBadge.classList.remove('hidden'); } 
+            else { navBadge.classList.add('hidden'); }
 
-            const locations = ['อาคารนิติ', 'ซาวน่า', 'ฟิตเนส', 'ไฟแสงสว่าง', 'อื่นๆ'];
-            const breakdownEl = document.getElementById('locationBreakdownContainer');
-            breakdownEl.innerHTML = locations.map(loc => {
+            document.getElementById('locationBreakdownContainer').innerHTML = ['อาคารนิติ', 'ซาวน่า', 'ฟิตเนส', 'ไฟแสงสว่าง', 'อื่นๆ'].map(loc => {
                 const count = allReports.filter(r => r.location === loc).length;
-                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                return `
-                    <div class="p-3 rounded-xl bg-zinc-50 border border-zinc-200/70">
-                        <div class="flex items-center justify-between text-xs font-semibold text-zinc-800">
-                            <span>${loc}</span>
-                            <span>${count} งาน</span>
-                        </div>
-                        <div class="w-full h-1.5 bg-zinc-200 rounded-full overflow-hidden mt-2">
-                            <div class="h-full bg-zinc-900 rounded-full" style="width: ${pct}%"></div>
-                        </div>
-                    </div>
-                `;
+                return `<div class="p-3 rounded-xl bg-zinc-50 border border-zinc-200/70">
+                            <div class="flex justify-between text-xs font-semibold text-zinc-800"><span>${loc}</span><span>${count} งาน</span></div>
+                            <div class="w-full h-1.5 bg-zinc-200 rounded-full mt-2"><div class="h-full bg-zinc-900 rounded-full" style="width: ${total>0 ? (count/total)*100 : 0}%"></div></div>
+                        </div>`;
             }).join('');
 
             const tbody = document.getElementById('dashboardTableBody');
-            if (allReports.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="py-10 text-center text-zinc-400 text-xs">
-                            ยังไม่มีข้อมูลในระบบ กดปุ่ม "เพิ่มข้อมูลจำลอง" ด้านบนเพื่อทดสอบตารางนิติบุคคล
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
+            if (allReports.length === 0) { tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-zinc-400 text-xs">ยังไม่มีข้อมูล</td></tr>`; return; }
 
-            tbody.innerHTML = allReports.map(report => {
-                const imgUrl = report.imageUrl || DEFAULT_LOCATION_IMAGES[report.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
-                const safeLocation = escapeHtml(report.location || '-');
-                const safeSubLoc = escapeHtml(report.subLocation || '');
-                const safeDesc = escapeHtml(report.description || '-');
-
+            tbody.innerHTML = allReports.map(r => {
+                const imgUrl = r.imageUrl || DEFAULT_LOCATION_IMAGES[r.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
                 return `
                     <tr class="hover:bg-zinc-50/90 transition">
-                        <td class="py-3 px-4">
-                            <img 
-                                src="${imgUrl}" 
-                                alt="${safeLocation}" 
-                                onclick="window.openLightbox('${report.id}')"
-                                onerror="this.onerror=null;this.src='https://placehold.co/120x120/f4f4f5/52525b?text=Photo';"
-                                class="w-12 h-12 rounded-xl object-cover border border-zinc-200 cursor-zoom-in"
-                            >
+                        <td class="py-3 px-4"><img src="${imgUrl}" onclick="window.openLightbox('${r.id}')" class="w-12 h-12 rounded-xl object-cover border cursor-zoom-in"></td>
+                        <td class="py-3 px-4 font-semibold text-zinc-900"><div>${escapeHtml(r.location)}</div>${r.subLocation?`<div class="text-[11px] font-normal text-zinc-500">${escapeHtml(r.subLocation)}</div>`:''}</td>
+                        <td class="py-3 px-4 text-zinc-700 max-w-xs"><div class="line-clamp-2">${escapeHtml(r.description)}</div>${r.techNote?`<div class="text-[11px] text-zinc-500"><i class="fa-solid fa-wrench"></i> ${escapeHtml(r.techNote)}</div>`:''}</td>
+                        <td class="py-3 px-4">${getUrgencyBadgeHTML(r.urgency)}</td>
+                        <td class="py-3 px-4 text-xs text-zinc-500">${formatThaiDateTime(r.createdAtMs)}</td>
+                        <td class="py-3 px-4">${getStatusBadgeHTML(r.status)}</td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="window.openStatusModal('${r.id}')" class="px-2 py-1.5 rounded-lg bg-zinc-900 text-white text-[11px] mr-1">สถานะ</button>
+                            <button onclick="window.openDeleteModal('${r.id}')" class="px-2 py-1.5 rounded-lg border text-zinc-500 hover:text-red-600"><i class="fa-solid fa-trash-can text-xs"></i></button>
                         </td>
-                        <td class="py-3 px-4 font-semibold text-zinc-900 whitespace-nowrap">
-                            <div>${safeLocation}</div>
-                            ${safeSubLoc ? `<div class="text-[11px] font-normal text-zinc-500">${safeSubLoc}</div>` : ''}
-                        </td>
-                        <td class="py-3 px-4 text-zinc-700 max-w-xs">
-                            <div class="line-clamp-2">${safeDesc}</div>
-                            ${report.techNote ? `<div class="text-[11px] text-zinc-500 mt-0.5"><i class="fa-solid fa-wrench mr-1"></i>${escapeHtml(report.techNote)}</div>` : ''}
-                        </td>
-                        <td class="py-3 px-4 whitespace-nowrap">
-                            ${getUrgencyBadgeHTML(report.urgency)}
-                        </td>
-                        <td class="py-3 px-4 text-xs text-zinc-500 whitespace-nowrap">
-                            ${formatThaiDateTime(report.createdAtMs)}
-                        </td>
-                        <td class="py-3 px-4 whitespace-nowrap">
-                            ${getStatusBadgeHTML(report.status)}
-                        </td>
-                        <td class="py-3 px-4 text-right whitespace-nowrap">
-                            <div class="inline-flex items-center gap-1.5">
-                                <button 
-                                    onclick="window.openStatusModal('${report.id}')" 
-                                    class="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition cursor-pointer"
-                                >
-                                    เปลี่ยนสถานะ
-                                </button>
-                                <button 
-                                    onclick="window.openDeleteModal('${report.id}')" 
-                                    class="p-1.5 rounded-lg border border-zinc-200 hover:bg-red-50 text-zinc-500 hover:text-red-600 transition cursor-pointer"
-                                    title="ลบ"
-                                >
-                                    <i class="fa-solid fa-trash-can text-xs"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                    </tr>`;
             }).join('');
         }
 
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        // 7. ระบบแสดงภาพพรีวิวก่อนกดส่ง (Image Preview & Instant Compression)
+        // 7. Preview Image Logic
         const imageInput = document.getElementById('reportImageInput');
-        const previewContainer = document.getElementById('imagePreviewContainer');
-        const previewElement = document.getElementById('imagePreviewElement');
-        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
-        const fileNameLabel = document.getElementById('imageFileName');
-        const btnRemoveImage = document.getElementById('btnRemoveImage');
-
         imageInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
-            if (!file.type.startsWith('image/')) {
-                showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น (JPG, PNG, WEBP)', 'error');
-                return;
-            }
-
+            if (!file.type.startsWith('image/')) { showToast('รองรับไฟล์รูปภาพเท่านั้น', 'error'); return; }
             selectedImageFile = file;
-            fileNameLabel.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
-
+            document.getElementById('imageFileName').textContent = `${file.name} (${(file.size/1024).toFixed(0)} KB)`;
             try {
-                // บีบอัดภาพให้มีขนาดเล็กแต่คมชัดทันทีที่เลือกไฟล์
-                selectedImagePreviewDataUrl = await compressImageToDataUrl(file, 800, 0.72);
-                previewElement.src = selectedImagePreviewDataUrl;
-                uploadPlaceholder.classList.add('hidden');
-                previewContainer.classList.remove('hidden');
-            } catch (err) {
-                console.error('Image preview error:', err);
-                showToast('ไม่สามารถแสดงภาพพรีวิวได้', 'error');
-            }
+                // บีบอัดภาพเพื่อประหยัดพื้นที่ Firestore (เหลือประมาณ 60KB)
+                selectedImagePreviewDataUrl = await compressImageToDataUrl(file, 800, 0.6);
+                document.getElementById('imagePreviewElement').src = selectedImagePreviewDataUrl;
+                document.getElementById('uploadPlaceholder').classList.add('hidden');
+                document.getElementById('imagePreviewContainer').classList.remove('hidden');
+            } catch (err) { showToast('ไม่สามารถพรีวิวภาพได้', 'error'); }
         });
 
-        btnRemoveImage.addEventListener('click', (e) => {
-            e.stopPropagation();
-            clearImageSelection();
+        document.getElementById('btnRemoveImage').addEventListener('click', (e) => {
+            e.stopPropagation(); clearImageSelection();
         });
 
         function clearImageSelection() {
-            selectedImageFile = null;
-            selectedImagePreviewDataUrl = null;
-            imageInput.value = '';
-            previewElement.src = '';
-            previewContainer.classList.add('hidden');
-            uploadPlaceholder.classList.remove('hidden');
+            selectedImageFile = null; selectedImagePreviewDataUrl = null; imageInput.value = '';
+            document.getElementById('imagePreviewElement').src = '';
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+            document.getElementById('uploadPlaceholder').classList.remove('hidden');
         }
 
-        // 8. การส่งฟอร์มแจ้งซ่อมใหม่ (แก้ปัญหาค้างที่ 35% ด้วย Smart Timeout + Direct Firestore Image Fallback)
-        const maintenanceForm = document.getElementById('maintenanceForm');
-        maintenanceForm.addEventListener('submit', async (e) => {
+        // 8. Submit Form (Save directly to Firestore Fallback)
+        document.getElementById('maintenanceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const location = document.getElementById('reportLocation').value;
-            const subLocation = document.getElementById('reportSubLocation').value.trim();
-            const reporterName = document.getElementById('reporterName').value.trim();
-            const description = document.getElementById('reportDescription').value.trim();
-            const urgencyRadio = document.querySelector('input[name="reportUrgency"]:checked');
-            const urgency = urgencyRadio ? urgencyRadio.value : 'ปกติ';
-
-            if (!location || !description) {
-                showToast('กรุณาเลือกสถานที่และกรอกรายละเอียดปัญหา', 'error');
-                return;
-            }
+            const subLoc = document.getElementById('reportSubLocation').value.trim();
+            const repName = document.getElementById('reporterName').value.trim();
+            const desc = document.getElementById('reportDescription').value.trim();
+            const urgency = document.querySelector('input[name="reportUrgency"]:checked')?.value || 'ปกติ';
 
             const submitBtn = document.getElementById('btnSubmitReport');
-            const progressWrapper = document.getElementById('uploadProgressWrapper');
-            const progressBar = document.getElementById('uploadProgressBar');
-            const progressPercent = document.getElementById('uploadProgressPercent');
-            const progressStatus = document.getElementById('uploadProgressStatus');
+            const pWrapper = document.getElementById('uploadProgressWrapper');
+            const pBar = document.getElementById('uploadProgressBar');
+            const pPercent = document.getElementById('uploadProgressPercent');
 
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>กำลังบันทึกข้อมูล...</span>`;
+            
+            // กรณีใช้รูปที่บีบอัดเป็น Base64 Data URL หรือ ปล่อยว่างเพื่อใช้รูปเริ่มต้น
+            let finalImageUrl = selectedImagePreviewDataUrl || ""; 
 
-            let finalImageUrl = selectedImagePreviewDataUrl || DEFAULT_LOCATION_IMAGES[location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
+            if (selectedImageFile) {
+                pWrapper.classList.remove('hidden');
+                pBar.style.width = '70%'; pPercent.textContent = '70%';
+            }
+
+            const newReport = {
+                location, subLocation: subLoc, reporterName: repName || 'ลูกบ้าน', description: desc, urgency,
+                status: 'รอซ่อม', techNote: '', imageUrl: finalImageUrl,
+                createdAtMs: Date.now(), updatedAtMs: Date.now(), createdBy: currentUser?.uid || 'guest'
+            };
 
             try {
-                if (selectedImageFile) {
-                    progressWrapper.classList.remove('hidden');
-                    progressStatus.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-bounce"></i>กำลังอัปโหลดและประมวลผลรูปภาพ...`;
-                    progressBar.style.width = '40%';
-                    progressPercent.textContent = '40%';
-
-                    // พยายามอัปโหลดไปที่ Firebase Storage ภายในเวลา 2.5 วินาที
-                    // หากโปรเจกต์ยังไม่ได้เปิด Storage หรือติดสิทธิ์ระบบจะสลับมาบันทึกภาพที่บีบอัดลงในฐานข้อมูลโดยตรงทันที (ไม่ค้างที่ 35% อีกต่อไป)
-                    try {
-                        const safeName = selectedImageFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-                        const filePath = `laddarom_maintenance/${Date.now()}_${safeName}`;
-                        const fileRef = storageRef(storage, filePath);
-
-                        const uploadResult = await withTimeout(uploadBytes(fileRef, selectedImageFile), 2500, 'Storage timeout');
-                        progressBar.style.width = '80%';
-                        progressPercent.textContent = '80%';
-
-                        finalImageUrl = await withTimeout(getDownloadURL(uploadResult.ref), 2000, 'Get URL timeout');
-                    } catch (storageNotice) {
-                        // ใช้ภาพที่ย่อขนาดแล้ว (selectedImagePreviewDataUrl) เก็บลงใน Firestore แทนทันที
-                        finalImageUrl = selectedImagePreviewDataUrl || finalImageUrl;
-                    }
-
-                    progressBar.style.width = '95%';
-                    progressPercent.textContent = '95%';
-                }
-
-                const newReportData = {
-                    location,
-                    subLocation,
-                    reporterName: reporterName || 'ลูกบ้านลัดดารมย์',
-                    description,
-                    urgency,
-                    status: 'รอซ่อม',
-                    techNote: '',
-                    imageUrl: finalImageUrl,
-                    createdAtMs: Date.now(),
-                    updatedAtMs: Date.now(),
-                    createdBy: currentUser ? currentUser.uid : 'guest'
-                };
-
                 if (!isUsingLocalFallback) {
-                    await withTimeout(addDoc(getReportsCollectionRef(), newReportData), 5000, 'Firestore write timeout');
+                    await withTimeout(addDoc(getReportsCollectionRef(), newReport), 5000, 'Firestore Timeout');
                 } else {
-                    allReports.unshift({ id: 'local-' + Date.now(), ...newReportData });
+                    allReports.unshift({ id: 'local-' + Date.now(), ...newReport });
                     renderAllViews();
                 }
-
-                if (selectedImageFile) {
-                    progressBar.style.width = '100%';
-                    progressPercent.textContent = '100%';
-                }
-
-                // รีเซ็ตฟอร์มและสลับกลับไปหน้ารายการงานทันที
-                maintenanceForm.reset();
-                clearImageSelection();
-                progressWrapper.classList.add('hidden');
-                showToast('ส่งใบแจ้งซ่อมบำรุงเรียบร้อยแล้ว');
+                
+                if (selectedImageFile) { pBar.style.width = '100%'; pPercent.textContent = '100%'; }
+                
+                document.getElementById('maintenanceForm').reset();
+                clearImageSelection(); pWrapper.classList.add('hidden');
+                showToast('ส่งใบแจ้งซ่อมสำเร็จ');
                 window.switchTab('list');
             } catch (err) {
-                console.error('Submit report error:', err);
-                // กรณีที่ Firestore ตั้งค่าให้อ่านได้อย่างเดียวแต่ยังไม่ได้อนุญาตให้เขียน ให้แสดงผลในหน้าจอและแจ้งเตือนชัดเจน
-                const fallbackReport = {
-                    id: 'local-' + Date.now(),
-                    location,
-                    subLocation,
-                    reporterName: reporterName || 'ลูกบ้านลัดดารมย์',
-                    description,
-                    urgency,
-                    status: 'รอซ่อม',
-                    techNote: '',
-                    imageUrl: finalImageUrl,
-                    createdAtMs: Date.now(),
-                    updatedAtMs: Date.now()
-                };
-                allReports.unshift(fallbackReport);
-                renderAllViews();
-                maintenanceForm.reset();
-                clearImageSelection();
-                window.switchTab('list');
-                showToast('บันทึกข้อมูลสำเร็จ (ตรวจสอบ Rules หากต้องการซิงค์ข้ามเครื่อง)', 'info');
+                showToast('เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่', 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i><span>ส่งใบแจ้งซ่อมบำรุง</span>`;
-                progressWrapper.classList.add('hidden');
+                pWrapper.classList.add('hidden');
             }
         });
 
-        // 9. การแก้ไข/อัปเดตสถานะ (Update Status)
-        window.openStatusModal = function(reportId) {
-            const report = allReports.find(r => r.id === reportId);
-            if (!report) return;
-
-            editingReportId = reportId;
-            document.getElementById('modalReportLocation').textContent = `${report.location} ${report.subLocation ? '(' + report.subLocation + ')' : ''}`;
-            document.getElementById('modalReportDesc').textContent = report.description;
-            document.getElementById('modalTechNote').value = report.techNote || '';
-
-            const radios = document.querySelectorAll('input[name="modalStatusRadio"]');
-            radios.forEach(r => {
-                r.checked = (r.value === report.status);
-            });
-
+        // 9. Modals Logic (Update, Delete, Lightbox, Filter)
+        window.openStatusModal = (id) => {
+            const r = allReports.find(x => x.id === id); if(!r) return;
+            editingReportId = id;
+            document.getElementById('modalReportLocation').textContent = r.location;
+            document.getElementById('modalReportDesc').textContent = r.description;
+            document.getElementById('modalTechNote').value = r.techNote || '';
+            document.querySelectorAll('input[name="modalStatusRadio"]').forEach(radio => radio.checked = (radio.value === r.status));
             document.getElementById('statusModal').classList.remove('hidden');
         };
-
-        window.closeStatusModal = function() {
-            editingReportId = null;
-            document.getElementById('statusModal').classList.add('hidden');
-        };
-
-        window.confirmUpdateStatus = async function() {
-            if (!editingReportId) return;
-
-            const selectedRadio = document.querySelector('input[name="modalStatusRadio"]:checked');
-            const newStatus = selectedRadio ? selectedRadio.value : 'รอซ่อม';
+        window.closeStatusModal = () => { document.getElementById('statusModal').classList.add('hidden'); };
+        window.confirmUpdateStatus = async () => {
+            if(!editingReportId) return;
+            const newStatus = document.querySelector('input[name="modalStatusRadio"]:checked')?.value || 'รอซ่อม';
             const techNote = document.getElementById('modalTechNote').value.trim();
-            const btn = document.getElementById('btnConfirmStatusUpdate');
-
-            btn.disabled = true;
-            btn.textContent = 'กำลังบันทึก...';
-
+            const btn = document.getElementById('btnConfirmStatusUpdate'); btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
             try {
                 if (!isUsingLocalFallback && !String(editingReportId).startsWith('local-')) {
-                    const reportRef = doc(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports', editingReportId);
-                    await withTimeout(updateDoc(reportRef, {
-                        status: newStatus,
-                        techNote: techNote,
-                        updatedAtMs: Date.now()
-                    }), 4000);
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports', editingReportId), { status: newStatus, techNote, updatedAtMs: Date.now() });
                 } else {
                     const idx = allReports.findIndex(r => r.id === editingReportId);
-                    if (idx !== -1) {
-                        allReports[idx].status = newStatus;
-                        allReports[idx].techNote = techNote;
-                        allReports[idx].updatedAtMs = Date.now();
-                        renderAllViews();
-                    }
+                    if(idx !== -1) { allReports[idx].status = newStatus; allReports[idx].techNote = techNote; renderAllViews(); }
                 }
-                showToast(`อัปเดตสถานะเป็น "${newStatus}" เรียบร้อยแล้ว`);
-                window.closeStatusModal();
-            } catch (err) {
-                console.error('Update status error:', err);
-                showToast('ไม่สามารถอัปเดตสถานะได้ กรุณาตรวจสอบ Firestore Rules', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'บันทึกสถานะ';
-            }
+                showToast('อัปเดตสถานะสำเร็จ'); window.closeStatusModal();
+            } catch(e) { showToast('อัปเดตล้มเหลว', 'error'); } 
+            finally { btn.disabled = false; btn.textContent = 'บันทึกสถานะ'; }
         };
 
-        // 10. การลบรายการแจ้งซ่อม (Delete Report)
-        window.openDeleteModal = function(reportId) {
-            const report = allReports.find(r => r.id === reportId);
-            if (!report) return;
-
-            deletingReportId = reportId;
-            document.getElementById('deleteModalInfo').textContent = `ต้องการลบรายการ "${report.location}: ${report.description.slice(0, 40)}..." ใช่หรือไม่?`;
-            document.getElementById('deleteModal').classList.remove('hidden');
-        };
-
-        window.closeDeleteModal = function() {
-            deletingReportId = null;
-            document.getElementById('deleteModal').classList.add('hidden');
-        };
-
-        window.confirmDeleteReport = async function() {
-            if (!deletingReportId) return;
-
-            const btn = document.getElementById('btnConfirmDelete');
-            btn.disabled = true;
-            btn.textContent = 'กำลังลบ...';
-
+        window.openDeleteModal = (id) => { deletingReportId = id; document.getElementById('deleteModal').classList.remove('hidden'); };
+        window.closeDeleteModal = () => { document.getElementById('deleteModal').classList.add('hidden'); };
+        window.confirmDeleteReport = async () => {
+            if(!deletingReportId) return;
+            const btn = document.getElementById('btnConfirmDelete'); btn.disabled = true;
             try {
                 if (!isUsingLocalFallback && !String(deletingReportId).startsWith('local-')) {
-                    const reportRef = doc(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports', deletingReportId);
-                    await withTimeout(deleteDoc(reportRef), 4000);
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports', deletingReportId));
                 } else {
-                    allReports = allReports.filter(r => r.id !== deletingReportId);
+                    allReports = allReports.filter(r => r.id !== deletingReportId); renderAllViews();
+                }
+                showToast('ลบรายการสำเร็จ'); window.closeDeleteModal();
+            } catch(e) { showToast('ลบล้มเหลว', 'error'); } 
+            finally { btn.disabled = false; btn.textContent = 'ลบข้อมูลทันที'; }
+        };
+
+        // 10. ระบบล้างรูปภาพงานเก่า (Clean up old images > 60 days)
+        window.openCleanupModal = () => {
+            const sixtyDaysAgo = Date.now() - (60 * 24 * 60 * 60 * 1000);
+            
+            // หาข้อมูลที่ "เสร็จสิ้น" + "เกิน 60 วัน" + "มีรูปแนบที่ไม่ใช่ Default"
+            eligibleForCleanup = allReports.filter(r => {
+                const isCustomImage = r.imageUrl && r.imageUrl.trim() !== '' && !Object.values(DEFAULT_LOCATION_IMAGES).includes(r.imageUrl);
+                return r.status === 'เสร็จสิ้น' && r.updatedAtMs < sixtyDaysAgo && isCustomImage;
+            });
+
+            document.getElementById('cleanupModalCount').innerHTML = eligibleForCleanup.length > 0 
+                ? `พบรายการที่เข้าข่ายจำนวน <strong class="text-red-600">${eligibleForCleanup.length}</strong> รายการ`
+                : `<span class="text-zinc-500"><i class="fa-solid fa-check-circle mr-1"></i>ยอดเยี่ยม! ไม่มีรูปภาพขยะค้างในระบบ</span>`;
+            
+            const btn = document.getElementById('btnConfirmCleanup');
+            if(eligibleForCleanup.length === 0) {
+                btn.disabled = true;
+                btn.classList.replace('bg-amber-500', 'bg-zinc-200');
+                btn.classList.replace('text-white', 'text-zinc-400');
+            } else {
+                btn.disabled = false;
+                btn.classList.replace('bg-zinc-200', 'bg-amber-500');
+                btn.classList.replace('text-zinc-400', 'text-white');
+            }
+            
+            document.getElementById('cleanupModal').classList.remove('hidden');
+        };
+
+        window.closeCleanupModal = () => { document.getElementById('cleanupModal').classList.add('hidden'); };
+
+        window.confirmCleanup = async () => {
+            if(eligibleForCleanup.length === 0) return;
+            const btn = document.getElementById('btnConfirmCleanup'); 
+            btn.disabled = true; btn.textContent = 'กำลังล้างข้อมูล...';
+            try {
+                if (!isUsingLocalFallback) {
+                    const updatePromises = eligibleForCleanup.map(report => {
+                        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'laddarom_reports', report.id);
+                        return updateDoc(ref, { imageUrl: '', updatedAtMs: Date.now() }); // เซ็ต imageUrl เป็นค่าว่าง เพื่อให้ UI ดึงภาพ Default มาใช้แทน
+                    });
+                    await Promise.all(updatePromises);
+                } else {
+                    eligibleForCleanup.forEach(report => {
+                        const idx = allReports.findIndex(r => r.id === report.id);
+                        if(idx !== -1) { allReports[idx].imageUrl = ''; allReports[idx].updatedAtMs = Date.now(); }
+                    });
                     renderAllViews();
                 }
-                showToast('ลบรายการแจ้งซ่อมเรียบร้อยแล้ว');
-                window.closeDeleteModal();
-            } catch (err) {
-                console.error('Delete error:', err);
-                showToast('เกิดข้อผิดพลาดในการลบข้อมูล', 'error');
+                showToast(`คืนพื้นที่สำเร็จ เคลียร์รูปเก่า ${eligibleForCleanup.length} รายการแล้ว`);
+                window.closeCleanupModal();
+            } catch(e) {
+                showToast('เกิดข้อผิดพลาดระหว่างล้างข้อมูล', 'error');
             } finally {
-                btn.disabled = false;
-                btn.textContent = 'ลบข้อมูลทันที';
+                btn.textContent = 'ยืนยันล้างข้อมูล';
             }
         };
 
-        // 11. ระบบกรองข้อมูล, ค้นหา, ดูภาพขยาย และส่งออก CSV
-        window.setStatusFilter = function(status) {
-            activeStatusFilter = status;
-            const buttons = document.querySelectorAll('.status-filter-btn');
-            buttons.forEach(btn => {
-                if (btn.getAttribute('data-filter') === status) {
-                    btn.className = 'status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 text-white transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer';
-                } else {
-                    btn.className = 'status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer';
-                }
-            });
-            renderReportList();
-        };
-
-        document.getElementById('locationFilterSelect').addEventListener('change', (e) => {
-            activeLocationFilter = e.target.value;
-            renderReportList();
-        });
-
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            searchQuery = e.target.value.trim();
-            renderReportList();
-        });
-
-        window.openLightbox = function(reportId) {
-            const report = allReports.find(r => r.id === reportId);
-            if (!report) return;
-            const imgUrl = report.imageUrl || DEFAULT_LOCATION_IMAGES[report.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
-            document.getElementById('lightboxImage').src = imgUrl;
-            document.getElementById('lightboxCaption').textContent = `${report.location} ${report.subLocation ? '(' + report.subLocation + ')' : ''} - ${report.description}`;
+        window.openLightbox = (id) => {
+            const r = allReports.find(x => x.id === id); if(!r) return;
+            document.getElementById('lightboxImage').src = r.imageUrl || DEFAULT_LOCATION_IMAGES[r.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
+            document.getElementById('lightboxCaption').textContent = r.description;
             document.getElementById('lightboxModal').classList.remove('hidden');
         };
+        window.closeLightbox = () => { document.getElementById('lightboxModal').classList.add('hidden'); };
 
-        window.closeLightbox = function() {
-            document.getElementById('lightboxModal').classList.add('hidden');
-        };
+        window.setStatusFilter = (s) => { activeStatusFilter = s; document.querySelectorAll('.status-filter-btn').forEach(b => { b.className = b.getAttribute('data-filter')===s ? 'status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 text-white transition' : 'status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition'; }); renderReportList(); };
+        document.getElementById('locationFilterSelect').addEventListener('change', (e) => { activeLocationFilter = e.target.value; renderReportList(); });
+        document.getElementById('searchInput').addEventListener('input', (e) => { searchQuery = e.target.value.trim(); renderReportList(); });
 
-        // ข้อมูลตัวอย่างของหมู่บ้านลัดดารมย์
+        // Demo Data (เพิ่มข้อมูลอายุ 65 วัน เพื่อให้กดทดสอบลบได้)
+        const now = Date.now();
+        const sixtyFiveDaysAgo = now - (65 * 24 * 60 * 60 * 1000); // จำลองว่าส่งมาเมื่อ 65 วันที่แล้ว
+        
         const DEMO_LADDAROM_DATA = [
-            {
-                location: 'ไฟแสงสว่าง',
-                subLocation: 'บ้าน 99/158',
-                reporterName: 'ลูกบ้าน 99/158',
-                description: 'ไฟกิ่งส่องสว่างริมถนนโครงการบริเวณหน้าบ้าน 99/158 มีแสงรบกวน/ชำรุด รบกวนช่างเข้าตรวจสอบและปรับแก้ไขด้วยครับ',
-                urgency: 'ด่วน',
-                status: 'รอซ่อม',
-                techNote: '',
-                imageUrl: DEFAULT_LOCATION_IMAGES['ไฟแสงสว่าง']
-            },
-            {
-                location: 'ฟิตเนส',
-                subLocation: 'ชั้น 2 อาคารคลับเฮาส์',
-                reporterName: 'เจ้าหน้าที่คลับเฮาส์',
-                description: 'ลู่วิ่งไฟฟ้าตัวที่ 2 หน้าจอแสดงผล Error E02 และสายพานฝืด ไม่สามารถใช้งานได้ชั่วคราว',
-                urgency: 'ปกติ',
-                status: 'กำลังดำเนินการ',
-                techNote: 'ประสานศูนย์บริการเข้าตรวจเช็กอะไหล่วันพรุ่งนี้ 10:00 น.',
-                imageUrl: DEFAULT_LOCATION_IMAGES['ฟิตเนส']
-            },
-            {
-                location: 'ซาวน่า',
-                subLocation: 'โซนแยกชาย-หญิง',
-                reporterName: 'ลูกบ้าน 99/108',
-                description: 'เตาทำความร้อนห้องซาวน่าฝั่งชายอุณหภูมิไม่ขึ้น และไฟสถานะหน้าห้องไม่ติด',
-                urgency: 'ด่วนมาก',
-                status: 'รอซ่อม',
-                techNote: '',
-                imageUrl: DEFAULT_LOCATION_IMAGES['ซาวน่า']
-            },
-            {
-                location: 'อาคารนิติ',
-                subLocation: 'ห้องรับรองชั้น 1',
-                reporterName: 'นิติบุคคล ลัดดารมย์',
-                description: 'แอร์ห้องรับรองลูกบ้านมีน้ำหยดลงพื้นบริเวณโซฟารับแขก ล้างท่อเดรนและตรวจเช็กน้ำยาแอร์เรียบร้อย',
-                urgency: 'ปกติ',
-                status: 'เสร็จสิ้น',
-                techNote: 'ช่างอาคารล้างถาดน้ำทิ้งและเป่าท่อระบายน้ำแอร์เสร็จเรียบร้อย',
-                imageUrl: DEFAULT_LOCATION_IMAGES['อาคารนิติ']
-            }
+            { location: 'ไฟแสงสว่าง', subLocation: 'บ้าน 99/158', reporterName: 'ลูกบ้าน', description: 'ไฟกิ่งส่องสว่างริมถนนโครงการดับ', urgency: 'ด่วน', status: 'รอซ่อม', techNote: '', imageUrl: DEFAULT_LOCATION_IMAGES['ไฟแสงสว่าง'] },
+            { location: 'ฟิตเนส', subLocation: 'คลับเฮาส์', reporterName: 'รปภ.', description: 'ลู่วิ่ง Error ไม่สามารถใช้งานได้', urgency: 'ปกติ', status: 'กำลังดำเนินการ', techNote: 'รออะไหล่', imageUrl: DEFAULT_LOCATION_IMAGES['ฟิตเนส'] },
+            // ไอเทมนี้จำลองให้เป็นงานเก่าและมีรูปที่แนบเอง (Base64 จำลอง) เพื่อให้เข้าเงื่อนไขโดนลบรูปภาพ
+            { location: 'อาคารนิติ', subLocation: 'ประวัติเก่า (สำหรับทดสอบลบ)', reporterName: 'นิติบุคคล', description: 'แอร์ห้องรับรองน้ำหยด ซ่อมเสร็จเมื่อ 2 เดือนก่อน', urgency: 'ปกติ', status: 'เสร็จสิ้น', techNote: 'ล้างทำความสะอาดแอร์เรียบร้อย', imageUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', createdAtMs: sixtyFiveDaysAgo, updatedAtMs: sixtyFiveDaysAgo + 3600000 }
         ];
 
         function loadInitialDemoReportsInMemory() {
-            const now = Date.now();
-            allReports = DEMO_LADDAROM_DATA.map((item, index) => ({
-                id: 'local-demo-' + index,
-                ...item,
-                createdAtMs: now - (index * 3600 * 1000 * 5),
-                updatedAtMs: now - (index * 3600 * 1000 * 2)
-            }));
+            allReports = DEMO_LADDAROM_DATA.map((item, i) => ({ id: 'local-demo-'+i, ...item, createdAtMs: item.createdAtMs || now - (i*3600000*5), updatedAtMs: item.updatedAtMs || now - (i*3600000) }));
         }
 
-        window.seedDemoReports = async function() {
-            const now = Date.now();
+        window.seedDemoReports = async () => {
             try {
                 if (!isUsingLocalFallback) {
-                    for (let i = 0; i < DEMO_LADDAROM_DATA.length; i++) {
-                        await withTimeout(addDoc(getReportsCollectionRef(), {
-                            ...DEMO_LADDAROM_DATA[i],
-                            createdAtMs: now - (i * 3600 * 1000 * 4),
-                            updatedAtMs: now - (i * 3600 * 1000 * 2),
-                            createdBy: currentUser ? currentUser.uid : 'guest'
-                        }), 4000);
+                    for (let i=0; i<DEMO_LADDAROM_DATA.length; i++) {
+                        await addDoc(getReportsCollectionRef(), { ...DEMO_LADDAROM_DATA[i], createdAtMs: DEMO_LADDAROM_DATA[i].createdAtMs || now, updatedAtMs: DEMO_LADDAROM_DATA[i].updatedAtMs || now });
                     }
                 } else {
-                    loadInitialDemoReportsInMemory();
-                    renderAllViews();
+                    loadInitialDemoReportsInMemory(); renderAllViews();
                 }
-                showToast('เพิ่มข้อมูลจำลองหมู่บ้านลัดดารมย์ 4 รายการสำเร็จ');
-            } catch (err) {
-                console.error('Seed error:', err);
-                loadInitialDemoReportsInMemory();
-                renderAllViews();
-                showToast('แสดงข้อมูลจำลองเรียบร้อยแล้ว', 'info');
-            }
+                showToast('เพิ่มข้อมูลจำลองสำเร็จ');
+            } catch(e) { loadInitialDemoReportsInMemory(); renderAllViews(); showToast('แสดงข้อมูลจำลอง (โหมดออฟไลน์)', 'info'); }
         };
 
-        // ส่งออกข้อมูลตารางนิติบุคคลเป็นไฟล์ CSV
-        window.exportReportsCSV = function() {
-            if (allReports.length === 0) {
-                showToast('ไม่มีข้อมูลสำหรับส่งออก', 'error');
-                return;
-            }
-            const headers = ['ลำดับ', 'สถานที่', 'จุดสังเกต', 'รายละเอียดปัญหา', 'ความด่วน', 'สถานะ', 'หมายเหตุช่าง', 'ผู้แจ้ง', 'เวลาที่แจ้ง'];
-            const rows = allReports.map((r, i) => [
-                i + 1,
-                `"${(r.location || '').replace(/"/g, '""')}"`,
-                `"${(r.subLocation || '').replace(/"/g, '""')}"`,
-                `"${(r.description || '').replace(/"/g, '""')}"`,
-                `"${(r.urgency || '')}"`,
-                `"${(r.status || '')}"`,
-                `"${(r.techNote || '').replace(/"/g, '""')}"`,
-                `"${(r.reporterName || '').replace(/"/g, '""')}"`,
-                `"${formatThaiDateTime(r.createdAtMs)}"`
-            ]);
-
-            const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `laddarom-maintenance-${new Date().toISOString().slice(0,10)}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast('ดาวน์โหลดไฟล์ CSV สำหรับนิติบุคคลเรียบร้อยแล้ว');
+        window.exportReportsCSV = () => {
+            if(allReports.length === 0) { showToast('ไม่มีข้อมูล', 'error'); return; }
+            const csv = '\uFEFF' + ['ลำดับ,สถานที่,รายละเอียด,ความด่วน,สถานะ,หมายเหตุ,วันที่แจ้ง', ...allReports.map((r,i) => `${i+1},"${r.location}","${r.description}","${r.urgency}","${r.status}","${r.techNote||''}","${formatThaiDateTime(r.createdAtMs)}"` )].join('\n');
+            const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'})); link.download = `laddarom-maintenance.csv`; link.click();
         };
 
-        window.addEventListener('DOMContentLoaded', () => {
-            initAuthAndRealtimeListener();
-        });
+        window.addEventListener('DOMContentLoaded', initAuthAndRealtimeListener);
     </script>
 </body>
 </html>
