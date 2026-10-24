@@ -197,10 +197,7 @@
                             <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                             กำลังดำเนินการ
                         </button>
-                        <button onclick="window.setStatusFilter('เสร็จสิ้น')" data-filter="เสร็จสิ้น" class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            เสร็จสิ้น
-                        </button>
+                        <!-- นำปุ่ม เสร็จสิ้น ออกจากหน้ารายการงานตามความต้องการ -->
                     </div>
 
                     <!-- Location Filter Dropdown -->
@@ -242,7 +239,7 @@
                 <div class="w-14 h-14 rounded-2xl bg-zinc-100 text-zinc-500 flex items-center justify-center mx-auto mb-4">
                     <i class="fa-solid fa-clipboard-check text-2xl"></i>
                 </div>
-                <h3 class="text-base font-bold text-zinc-900">ไม่พบรายการแจ้งซ่อมในเดือนที่เลือก</h3>
+                <h3 class="text-base font-bold text-zinc-900">ไม่พบรายการแจ้งซ่อมที่รอการแก้ไขในเดือนที่เลือก</h3>
                 <p class="text-xs text-zinc-500 mt-1 leading-relaxed">
                     หากเพิ่งอัปเดตระบบใหม่ คุณสามารถกดปุ่ม <strong>"ดึงข้อมูลล่าสุดกลับมา"</strong> เพื่อย้ายข้อมูลจากระบบเดิมเข้าสู่โครงสร้างรายเดือน หรือกดสร้างใบแจ้งซ่อมใหม่ได้ทันที
                 </p>
@@ -566,7 +563,7 @@
                 <div class="px-5 py-4 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                         <h3 class="text-sm font-bold text-zinc-900">ตารางสรุปรายการแจ้งซ่อม (สำหรับเจ้าหน้าที่นิติบุคคล)</h3>
-                        <p class="text-xs text-zinc-500">สามารถเปลี่ยนสถานะงานซ่อม หรือกดดูภาพขยายได้โดยตรงจากตาราง</p>
+                        <p class="text-xs text-zinc-500">สามารถเปลี่ยนสถานะงานซ่อม หรือกดดูภาพขยายได้โดยตรงจากตาราง (แสดงทุกสถานะรวมถึงงานที่เสร็จสิ้น)</p>
                     </div>
                     <span class="text-xs text-zinc-400">Collection: mnt_laddarom_reports</span>
                 </div>
@@ -1179,7 +1176,11 @@
 
         function renderReportList() {
             const container = document.getElementById('reportCardsContainer');
+            
             const filtered = allReports.filter(item => {
+                // ซ่อนงานที่ "เสร็จสิ้น" แล้วออกจากหน้ารายการงาน
+                if (item.status === 'เสร็จสิ้น') return false;
+
                 const text = `${item.location||''} ${item.subLocation||''} ${item.description||''} ${item.reporterName||''} ${item.techNote||''}`.toLowerCase();
                 return (activeStatusFilter === 'ALL' || item.status === activeStatusFilter) &&
                        (activeLocationFilter === 'ALL' || item.location === activeLocationFilter) &&
@@ -1188,7 +1189,10 @@
 
             document.getElementById('listTotalCount').textContent = `${filtered.length} รายการ`;
             
-            if (allReports.length === 0) {
+            // ใช้ count ของงานที่ไม่ได้เสร็จสิ้นเพื่อดูว่าควรแสดงหน้าว่างหรือไม่
+            const activeReportsCount = allReports.filter(r => r.status !== 'เสร็จสิ้น').length;
+
+            if (activeReportsCount === 0) {
                 container.innerHTML = '';
                 document.getElementById('listEmptyState').classList.remove('hidden');
                 return;
@@ -1196,7 +1200,7 @@
             document.getElementById('listEmptyState').classList.add('hidden');
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-span-full bg-white rounded-2xl p-8 text-center border border-zinc-200/80"><p class="text-sm font-semibold text-zinc-800">ไม่พบรายการที่ตรงกับตัวกรองในเดือนนี้</p></div>`;
+                container.innerHTML = `<div class="col-span-full bg-white rounded-2xl p-8 text-center border border-zinc-200/80"><p class="text-sm font-semibold text-zinc-800">ไม่พบรายการที่ตรงกับตัวกรอง</p></div>`;
                 return;
             }
 
@@ -1263,6 +1267,7 @@
                 return;
             }
 
+            // ในหน้าแดชบอร์ดให้แสดงผลทุกรายการ (รวมงานที่เสร็จสิ้นแล้วด้วย)
             tbody.innerHTML = allReports.map(r => {
                 const imgUrl = r.imageUrl || DEFAULT_LOCATION_IMAGES[r.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
                 return `
@@ -1802,6 +1807,19 @@
                     imageUrl: DEFAULT_LOCATION_IMAGES['ฟิตเนส'],
                     createdAtMs: now - 7200000,
                     updatedAtMs: now - 3600000,
+                    monthKey: selectedMonthKey
+                },
+                {
+                    location: 'ไฟแสงสว่าง',
+                    subLocation: 'หน้าซอย 4',
+                    reporterName: 'ลูกบ้าน',
+                    description: 'ไฟส่องสว่างทางเข้าโครงการขาด',
+                    urgency: 'ปกติ',
+                    status: 'เสร็จสิ้น',
+                    techNote: 'เปลี่ยนหลอดไฟเรียบร้อยแล้ว',
+                    imageUrl: DEFAULT_LOCATION_IMAGES['ไฟแสงสว่าง'],
+                    createdAtMs: now - 86400000,
+                    updatedAtMs: now - 1200000,
                     monthKey: selectedMonthKey
                 }
             ];
