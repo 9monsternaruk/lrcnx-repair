@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LADDAROM | ระบบแจ้งซ่อมบำรุงหมู่บ้านลัดดารมย์</title>
+    <title>LADDAROM | ระบบแจ้งซ่อมบำรุงหมู่บ้านลัดดารมย์ (SSO Connected)</title>
     
     <!-- Google Fonts: Inter & Noto Sans Thai for Minimal & Professional Look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -60,7 +60,7 @@
         }
         /* Safe area padding for modern mobile devices */
         .pb-safe {
-            padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+            padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
         }
         .no-scrollbar::-webkit-scrollbar {
             display: none;
@@ -83,511 +83,580 @@
 <body class="min-h-screen flex flex-col bg-zinc-50 text-zinc-900 selection:bg-zinc-900 selection:text-white">
 
     <!-- Top Header Bar -->
-    <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-zinc-200 transition-all">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-zinc-200 transition-all">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
             <!-- Brand Identity -->
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center shadow-sm">
+            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center shadow-sm flex-shrink-0">
                     <i class="fa-solid fa-building-shield text-lg"></i>
                 </div>
-                <div>
+                <div class="truncate">
                     <div class="flex items-center gap-2">
-                        <h1 class="text-base sm:text-lg font-bold tracking-tight text-zinc-900">LADDAROM</h1>
-                        <span class="hidden sm:inline-block text-[11px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200">
-                            mnt_laddarom_reports
+                        <h1 class="text-base sm:text-lg font-bold tracking-tight text-zinc-900 truncate">LADDAROM</h1>
+                        <span class="hidden md:inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-900 text-amber-400">
+                            <i class="fa-solid fa-fingerprint mr-1"></i>CENTRAL SSO
                         </span>
                     </div>
-                    <p class="text-xs text-zinc-500">ระบบแจ้งซ่อมบำรุง หมู่บ้านลัดดารมย์</p>
+                    <p class="text-[11px] sm:text-xs text-zinc-500 truncate">ระบบแจ้งซ่อมบำรุง หมู่บ้านลัดดารมย์</p>
                 </div>
             </div>
 
-            <!-- Connection Status & Quick Actions -->
-            <div class="flex items-center gap-2 sm:gap-2.5">
-                <button id="btnMigrateHeader" onclick="window.migrateOldReports()" title="ดึงข้อมูลเก่าจากระบบเดิมกลับมา" class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-semibold transition shadow-xs cursor-pointer">
+            <!-- Connection Status, SSO User Pill & Quick Actions -->
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <!-- ปุ่มดึงข้อมูลเก่า (แสดงเฉพาะแอดมิน/นิติ) -->
+                <button id="btnMigrateHeader" onclick="window.migrateOldReports()" title="ดึงข้อมูลเก่าจากระบบเดิมกลับมา" class="hidden items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-semibold transition shadow-xs cursor-pointer">
                     <i class="fa-solid fa-cloud-arrow-down"></i>
-                    <span class="hidden md:inline">ดึงข้อมูลล่าสุดกลับมา</span>
+                    <span class="hidden lg:inline">ดึงข้อมูลล่าสุด</span>
                 </button>
-                <div id="connectionBadge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-xs font-medium text-zinc-600">
+
+                <!-- สถานะฐานข้อมูล -->
+                <div id="connectionBadge" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-xs font-medium text-zinc-600">
                     <span id="connectionDot" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                    <span id="connectionText" class="hidden sm:inline">กำลังเชื่อมต่อ...</span>
+                    <span id="connectionText" class="hidden lg:inline">กำลังเชื่อมต่อ...</span>
                 </div>
-                <button id="btnQuickAddHeader" onclick="window.switchTab('add')" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition shadow-sm cursor-pointer">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>แจ้งซ่อมใหม่</span>
+
+                <!-- ปุ่มโปรไฟล์ผู้ใช้งานกลาง (Central User Pill) -->
+                <button onclick="window.openSsoModal()" id="ssoHeaderBtn" class="flex items-center gap-2 pl-2.5 pr-2 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs transition shadow-xs cursor-pointer">
+                    <span id="ssoHeaderAvatar" class="w-5 h-5 rounded-lg bg-amber-400 text-zinc-950 font-bold text-[11px] flex items-center justify-center">U</span>
+                    <div class="text-left hidden sm:block max-w-[130px]">
+                        <div id="ssoHeaderName" class="text-[11px] font-bold leading-none truncate">ยังไม่ได้ล็อกอิน</div>
+                        <div id="ssoHeaderRole" class="text-[9px] text-zinc-300 leading-none mt-0.5 truncate">แตะเพื่อเข้าสู่ระบบ</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-[10px] text-zinc-400 ml-0.5"></i>
                 </button>
             </div>
         </div>
     </header>
 
     <!-- Main Content Area -->
-    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-5 pb-safe">
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-4 pb-safe">
 
-        <!-- Shared Month Filter Bar (แสดงเฉพาะแท็บรายการงานและแดชบอร์ด) -->
-        <div id="monthControlBar" class="mb-4 bg-white rounded-2xl p-3 sm:px-5 sm:py-3.5 border border-zinc-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-xl bg-zinc-100 text-zinc-700 flex items-center justify-center">
-                    <i class="fa-regular fa-calendar-days text-sm"></i>
+        <!-- Active Central User Identity Bar (แสดงสิทธิ์และสังกัดปัจจุบันชัดเจน) -->
+        <div id="ssoIdentityBanner" class="mb-4 bg-zinc-900 text-white rounded-2xl p-3.5 sm:px-5 border border-zinc-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-amber-400 flex-shrink-0">
+                    <i class="fa-solid fa-id-badge text-lg"></i>
                 </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-zinc-900">ข้อมูลประจำเดือน:</span>
-                        <span id="activeMonthLabel" class="text-xs font-semibold px-2 py-0.5 rounded-md bg-zinc-900 text-white">-</span>
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="text-xs text-zinc-400">ผู้ใช้งานขณะนี้:</span>
+                        <span id="bannerUserName" class="text-xs sm:text-sm font-bold text-white truncate">-</span>
+                        <span id="bannerRoleBadge" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-400 text-zinc-950">ROLE</span>
+                        <span id="bannerUnitBadge" class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-white/10 text-zinc-200">-</span>
                     </div>
-                    <p class="text-[11px] text-zinc-500">ดึงข้อมูลเฉพาะเดือนที่เลือกเพื่อประหยัดโควต้าฐานข้อมูล</p>
+                    <p id="bannerPermissionDesc" class="text-[11px] text-zinc-300 mt-0.5">
+                        ระบบดึงชื่อและบ้านเลขที่ของคุณไปกรอกในฟอร์มแจ้งซ่อมให้อัตโนมัติแล้ว
+                    </p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-1.5 self-end sm:self-auto">
-                <button onclick="window.stepMonth(-1)" title="เดือนก่อนหน้า" class="w-8 h-8 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 flex items-center justify-center text-xs transition cursor-pointer">
-                    <i class="fa-solid fa-chevron-left"></i>
+            <div class="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+                <button onclick="window.openSsoModal()" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-user-astronaut"></i>
+                    <span>สลับบัญชี / ตั้งค่า SSO</span>
                 </button>
-                <input 
-                    type="month" 
-                    id="monthPickerInput" 
-                    onchange="window.changeMonth(this.value)"
-                    class="bg-zinc-50 border border-zinc-200 text-zinc-800 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:border-zinc-900 transition cursor-pointer"
-                >
-                <button onclick="window.stepMonth(1)" title="เดือนถัดไป" class="w-8 h-8 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 flex items-center justify-center text-xs transition cursor-pointer">
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
-                <button onclick="window.resetToCurrentMonth()" class="px-2.5 py-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium transition cursor-pointer">
-                    เดือนนี้
-                </button>
+                <a href="central_auth.html" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-up-right-from-square text-[10px]"></i>
+                    <span>ไปหน้า Central ID</span>
+                </a>
             </div>
         </div>
 
-        <!-- ========================================== -->
-        <!-- TAB 1: รายการงาน (REPORT LIST)              -->
-        <!-- ========================================== -->
-        <section id="tab-list" class="tab-section space-y-5">
-            <!-- Header & Search/Filter Controls -->
-            <div class="bg-white rounded-2xl p-4 sm:p-5 border border-zinc-200/80 shadow-sm space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h2 class="text-lg font-bold text-zinc-900 flex items-center gap-2">
-                            <span>รายการแจ้งซ่อมทั้งหมด</span>
-                            <span id="listTotalCount" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-200">0 รายการ</span>
-                        </h2>
-                        <p class="text-xs text-zinc-500 mt-0.5">เรียงลำดับจากรายการแจ้งซ่อมล่าสุดไปเก่าสุดของเดือนที่เลือก (Real-time)</p>
-                    </div>
-
-                    <!-- Search Input -->
-                    <div class="relative w-full sm:w-64">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
-                        <input 
-                            type="text" 
-                            id="searchInput" 
-                            placeholder="ค้นหาสถานที่, บ้านเลขที่, รายละเอียด..." 
-                            class="w-full pl-9 pr-3 py-2 text-sm bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:bg-white focus:border-zinc-900 transition"
-                        >
-                    </div>
-                </div>
-
-                <!-- Filter Pills -->
-                <div class="flex items-center justify-between gap-2 pt-1 border-t border-zinc-100 overflow-x-auto no-scrollbar">
-                    <div class="flex items-center gap-1.5 py-1" id="statusFilterGroup">
-                        <button onclick="window.setStatusFilter('ALL')" data-filter="ALL" class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 text-white transition whitespace-nowrap cursor-pointer">
-                            ทั้งหมด
-                        </button>
-                        <button onclick="window.setStatusFilter('รอซ่อม')" data-filter="รอซ่อม" class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
-                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                            รอซ่อม
-                        </button>
-                        <button onclick="window.setStatusFilter('กำลังดำเนินการ')" data-filter="กำลังดำเนินการ" class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
-                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                            กำลังดำเนินการ
-                        </button>
-                        <!-- นำปุ่ม เสร็จสิ้น ออกจากหน้ารายการงานตามความต้องการ -->
-                    </div>
-
-                    <!-- Location Filter Dropdown -->
-                    <select id="locationFilterSelect" class="text-xs bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl px-3 py-1.5 focus:outline-none focus:border-zinc-900">
-                        <option value="ALL">ทุกสถานที่</option>
-                        <option value="อาคารนิติ">อาคารนิติ</option>
-                        <option value="ซาวน่า">ซาวน่า</option>
-                        <option value="ฟิตเนส">ฟิตเนส</option>
-                        <option value="ไฟแสงสว่าง">ไฟแสงสว่าง</option>
-                        <option value="อื่นๆ">อื่นๆ</option>
-                    </select>
-                </div>
+        <!-- Access Denied / Suspended Lock Screen (แสดงเมื่อแอดมินระงับสิทธิ์หรือตัดสิทธิ์แอปแจ้งซ่อม) -->
+        <div id="ssoAccessDeniedBox" class="hidden my-8 bg-white rounded-2xl p-8 text-center border-2 border-red-200 shadow-lg max-w-lg mx-auto space-y-4">
+            <div class="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-200">
+                <i class="fa-solid fa-user-lock text-2xl"></i>
             </div>
-
-            <!-- Loading Skeleton State -->
-            <div id="listLoadingState" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div class="bg-white rounded-2xl p-4 border border-zinc-200/80 shadow-sm animate-pulse space-y-3">
-                    <div class="w-full h-44 bg-zinc-200 rounded-xl"></div>
-                    <div class="h-4 bg-zinc-200 rounded w-1/2"></div>
-                    <div class="h-3 bg-zinc-100 rounded w-full"></div>
-                    <div class="h-3 bg-zinc-100 rounded w-3/4"></div>
-                </div>
-                <div class="bg-white rounded-2xl p-4 border border-zinc-200/80 shadow-sm animate-pulse space-y-3 hidden md:block">
-                    <div class="w-full h-44 bg-zinc-200 rounded-xl"></div>
-                    <div class="h-4 bg-zinc-200 rounded w-1/2"></div>
-                    <div class="h-3 bg-zinc-100 rounded w-full"></div>
-                    <div class="h-3 bg-zinc-100 rounded w-3/4"></div>
-                </div>
-                <div class="bg-white rounded-2xl p-4 border border-zinc-200/80 shadow-sm animate-pulse space-y-3 hidden lg:block">
-                    <div class="w-full h-44 bg-zinc-200 rounded-xl"></div>
-                    <div class="h-4 bg-zinc-200 rounded w-1/2"></div>
-                    <div class="h-3 bg-zinc-100 rounded w-full"></div>
-                    <div class="h-3 bg-zinc-100 rounded w-3/4"></div>
-                </div>
-            </div>
-
-            <!-- Empty State -->
-            <div id="listEmptyState" class="hidden bg-white rounded-2xl p-10 text-center border border-zinc-200/80 shadow-sm max-w-lg mx-auto my-6">
-                <div class="w-14 h-14 rounded-2xl bg-zinc-100 text-zinc-500 flex items-center justify-center mx-auto mb-4">
-                    <i class="fa-solid fa-clipboard-check text-2xl"></i>
-                </div>
-                <h3 class="text-base font-bold text-zinc-900">ไม่พบรายการแจ้งซ่อมที่รอการแก้ไขในเดือนที่เลือก</h3>
-                <p class="text-xs text-zinc-500 mt-1 leading-relaxed">
-                    หากเพิ่งอัปเดตระบบใหม่ คุณสามารถกดปุ่ม <strong>"ดึงข้อมูลล่าสุดกลับมา"</strong> เพื่อย้ายข้อมูลจากระบบเดิมเข้าสู่โครงสร้างรายเดือน หรือกดสร้างใบแจ้งซ่อมใหม่ได้ทันที
+            <div>
+                <span class="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px] font-bold uppercase">Access Restricted</span>
+                <h2 id="deniedTitle" class="text-lg font-bold text-zinc-900 mt-2">บัญชีของคุณไม่มีสิทธิ์เข้าใช้งานแอปแจ้งซ่อม</h2>
+                <p id="deniedReason" class="text-xs text-zinc-600 mt-1 leading-relaxed">
+                    บัญชีนี้อาจอยู่ระหว่างรอแอดมินอนุมัติ ถูกระงับการใช้งานชั่วคราว หรือแอดมินได้ปิดสิทธิ์การเข้าถึงแอป <strong>LADDAROM MNT</strong>
                 </p>
-                <div class="mt-5 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2.5">
-                    <button onclick="window.switchTab('add')" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition cursor-pointer">
-                        <i class="fa-solid fa-plus mr-1.5"></i>แจ้งซ่อมบำรุงใหม่
+            </div>
+            <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+                <button onclick="window.openSsoModal()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition cursor-pointer">
+                    <i class="fa-solid fa-right-to-bracket mr-1.5"></i>สลับบัญชีผู้ใช้งานอื่น
+                </button>
+                <a href="central_auth.html" class="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-semibold transition">
+                    กลับไปหน้าผู้ใช้งานกลาง (Central ID)
+                </a>
+            </div>
+        </div>
+
+        <!-- Protected App Content Wrapper -->
+        <div id="appProtectedContent">
+
+            <!-- Shared Month Filter Bar (แสดงเฉพาะแท็บรายการงานและแดชบอร์ด) -->
+            <div id="monthControlBar" class="mb-4 bg-white rounded-2xl p-3 sm:px-5 sm:py-3.5 border border-zinc-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-zinc-100 text-zinc-700 flex items-center justify-center">
+                        <i class="fa-regular fa-calendar-days text-sm"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-zinc-900">ข้อมูลประจำเดือน:</span>
+                            <span id="activeMonthLabel" class="text-xs font-semibold px-2 py-0.5 rounded-md bg-zinc-900 text-white">-</span>
+                        </div>
+                        <p class="text-[11px] text-zinc-500">ดึงข้อมูลเฉพาะเดือนที่เลือกเพื่อประหยัดโควต้าฐานข้อมูล</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 self-end sm:self-auto">
+                    <button onclick="window.stepMonth(-1)" title="เดือนก่อนหน้า" class="w-8 h-8 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 flex items-center justify-center text-xs transition cursor-pointer">
+                        <i class="fa-solid fa-chevron-left"></i>
                     </button>
-                    <button onclick="window.migrateOldReports()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition cursor-pointer">
-                        <i class="fa-solid fa-cloud-arrow-down mr-1.5"></i>ดึงข้อมูลล่าสุดกลับมา (Migrate)
+                    <input 
+                        type="month" 
+                        id="monthPickerInput" 
+                        onchange="window.changeMonth(this.value)"
+                        class="bg-zinc-50 border border-zinc-200 text-zinc-800 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:border-zinc-900 transition cursor-pointer"
+                    >
+                    <button onclick="window.stepMonth(1)" title="เดือนถัดไป" class="w-8 h-8 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 flex items-center justify-center text-xs transition cursor-pointer">
+                        <i class="fa-solid fa-chevron-right"></i>
                     </button>
-                    <button onclick="window.seedDemoReports()" id="btnSeedDemoEmpty" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium transition cursor-pointer">
-                        <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>สร้างข้อมูลตัวอย่าง
+                    <button onclick="window.resetToCurrentMonth()" class="px-2.5 py-1.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium transition cursor-pointer">
+                        เดือนนี้
                     </button>
                 </div>
             </div>
 
-            <!-- Report Cards Grid -->
-            <div id="reportCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-        </section>
-
-        <!-- ========================================== -->
-        <!-- TAB 2: แจ้งซ่อมใหม่ (ADD REPORT)             -->
-        <!-- ========================================== -->
-        <section id="tab-add" class="tab-section hidden max-w-2xl mx-auto">
-            <div class="bg-white rounded-2xl border border-zinc-200/80 shadow-sm overflow-hidden">
-                <!-- Form Header -->
-                <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-zinc-100 bg-zinc-900 text-white flex items-center justify-between">
-                    <div>
-                        <h2 class="text-base sm:text-lg font-bold flex items-center gap-2">
-                            <i class="fa-solid fa-screwdriver-wrench text-sm"></i>
-                            <span>แบบฟอร์มแจ้งซ่อมบำรุง</span>
-                        </h2>
-                        <p class="text-xs text-zinc-300 mt-0.5">กรอกรายละเอียดปัญหาเพื่อให้เจ้าหน้าที่นิติบุคคลหมู่บ้านลัดดารมย์เข้าตรวจสอบ</p>
-                    </div>
-                    <span class="text-xs px-2.5 py-1 rounded-lg bg-white/10 text-zinc-200 font-medium">
-                        เริ่มต้น: รอซ่อม
-                    </span>
-                </div>
-
-                <!-- Form Body -->
-                <form id="maintenanceForm" class="p-5 sm:p-6 space-y-5">
-                    <!-- 1. เลือกสถานที่ (Dropdown) -->
-                    <div>
-                        <label for="reportLocation" class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-2">
-                            1. สถานที่เกิดปัญหา <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <select 
-                                id="reportLocation" 
-                                required 
-                                class="w-full appearance-none bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:bg-white focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 transition"
-                            >
-                                <option value="" disabled selected>-- เลือกสถานที่ภายในหมู่บ้านลัดดารมย์ --</option>
-                                <option value="อาคารนิติ">อาคารนิติ (Juristic Office & Clubhouse)</option>
-                                <option value="ซาวน่า">ซาวน่า (Sauna & Steam Room)</option>
-                                <option value="ฟิตเนส">ฟิตเนส (Fitness Center)</option>
-                                <option value="ไฟแสงสว่าง">ไฟแสงสว่าง (Street & Garden Lighting)</option>
-                                <option value="อื่นๆ">อื่นๆ (พื้นที่ส่วนกลาง / ถนนโครงการ / สวน)</option>
-                            </select>
-                            <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none"></i>
-                        </div>
-                    </div>
-
-                    <!-- ระบุจุดเพิ่มเติมหรือผู้แจ้ง (Optional Helpful Context) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- ========================================== -->
+            <!-- TAB 1: รายการงาน (REPORT LIST)              -->
+            <!-- ========================================== -->
+            <section id="tab-list" class="tab-section space-y-5">
+                <!-- Header & Search/Filter Controls -->
+                <div class="bg-white rounded-2xl p-4 sm:p-5 border border-zinc-200/80 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                            <label for="reportSubLocation" class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
-                                จุดสังเกต / ซอย / บ้านเลขที่ (ถ้ามี)
-                            </label>
+                            <h2 class="text-lg font-bold text-zinc-900 flex items-center gap-2">
+                                <span>รายการกำลังติดตาม (Active Jobs)</span>
+                                <span id="listTotalCount" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-700 border border-zinc-200">0 รายการ</span>
+                            </h2>
+                            <p class="text-xs text-zinc-500 mt-0.5">แสดงเฉพาะงานที่มีสถานะ "รอซ่อม" และ "กำลังดำเนินการ" (งานที่เสร็จแล้วจะย้ายไปเก็บที่แดชบอร์ดนิติ)</p>
+                        </div>
+
+                        <!-- Search Input -->
+                        <div class="relative w-full sm:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 text-xs"></i>
                             <input 
                                 type="text" 
-                                id="reportSubLocation" 
-                                placeholder="เช่น บ้าน 99/158, หน้าซอย 4..."
-                                class="w-full bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:bg-white focus:border-zinc-900 transition"
+                                id="searchInput" 
+                                placeholder="ค้นหาสถานที่, บ้านเลขที่, รายละเอียด..." 
+                                class="w-full pl-9 pr-3 py-2 text-sm bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:bg-white focus:border-zinc-900 transition"
                             >
                         </div>
+                    </div>
+
+                    <!-- Filter Pills -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-100">
+                        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5" id="statusFilterGroup">
+                            <button onclick="window.setStatusFilter('ALL')" data-filter="ALL" class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-900 text-white transition whitespace-nowrap cursor-pointer">
+                                ทั้งหมด (ที่ยังไม่เสร็จ)
+                            </button>
+                            <button onclick="window.setStatusFilter('รอซ่อม')" data-filter="รอซ่อม" class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+                                <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                                รอซ่อม
+                            </button>
+                            <button onclick="window.setStatusFilter('กำลังดำเนินการ')" data-filter="กำลังดำเนินการ" class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                กำลังดำเนินการ
+                            </button>
+                            <!-- ปุ่มกรองเฉพาะงานของบ้านตัวเอง -->
+                            <button onclick="window.toggleMyUnitFilter()" id="btnFilterMyUnit" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-100 text-zinc-700 hover:bg-zinc-200 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-house-user text-[11px]"></i>
+                                <span id="btnFilterMyUnitText">เฉพาะงานที่ฉันแจ้ง</span>
+                            </button>
+                        </div>
+
+                        <!-- Location Filter Dropdown -->
+                        <select id="locationFilterSelect" class="text-xs bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-xl px-3 py-1.5 focus:outline-none focus:border-zinc-900">
+                            <option value="ALL">ทุกสถานที่</option>
+                            <option value="อาคารนิติ">อาคารนิติ</option>
+                            <option value="ซาวน่า">ซาวน่า</option>
+                            <option value="ฟิตเนส">ฟิตเนส</option>
+                            <option value="ไฟแสงสว่าง">ไฟแสงสว่าง</option>
+                            <option value="อื่นๆ">อื่นๆ</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Loading Skeleton State -->
+                <div id="listLoadingState" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-white rounded-2xl p-4 border border-zinc-200/80 shadow-sm animate-pulse space-y-3">
+                        <div class="w-full h-44 bg-zinc-200 rounded-xl"></div>
+                        <div class="h-4 bg-zinc-200 rounded w-1/2"></div>
+                        <div class="h-3 bg-zinc-100 rounded w-full"></div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-4 border border-zinc-200/80 shadow-sm animate-pulse space-y-3 hidden md:block">
+                        <div class="w-full h-44 bg-zinc-200 rounded-xl"></div>
+                        <div class="h-4 bg-zinc-200 rounded w-1/2"></div>
+                        <div class="h-3 bg-zinc-100 rounded w-full"></div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-4 border border-zinc-200/80 shadow-sm animate-pulse space-y-3 hidden lg:block">
+                        <div class="w-full h-44 bg-zinc-200 rounded-xl"></div>
+                        <div class="h-4 bg-zinc-200 rounded w-1/2"></div>
+                        <div class="h-3 bg-zinc-100 rounded w-full"></div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="listEmptyState" class="hidden bg-white rounded-2xl p-10 text-center border border-zinc-200/80 shadow-sm max-w-lg mx-auto my-6">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4 border border-emerald-200">
+                        <i class="fa-solid fa-clipboard-check text-2xl"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-zinc-900">ไม่มีงานค้างซ่อมในเดือนที่เลือก</h3>
+                    <p class="text-xs text-zinc-500 mt-1 leading-relaxed">
+                        งานแจ้งซ่อมที่ดำเนินการ <strong>"เสร็จสิ้น"</strong> แล้วทั้งหมด จะถูกย้ายไปเก็บไว้ในเมนู <strong>แดชบอร์ดนิติ</strong> เพื่อความสะอาดตา
+                    </p>
+                    <div class="mt-5 flex flex-col sm:flex-row flex-wrap items-center justify-center gap-2.5">
+                        <button onclick="window.switchTab('add')" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition cursor-pointer">
+                            <i class="fa-solid fa-plus mr-1.5"></i>แจ้งซ่อมบำรุงใหม่
+                        </button>
+                        <button onclick="window.seedDemoReports()" id="btnSeedDemoEmpty" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-medium transition cursor-pointer">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>สร้างข้อมูลตัวอย่าง
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Report Cards Grid -->
+                <div id="reportCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- TAB 2: แจ้งซ่อมใหม่ (ADD REPORT)             -->
+            <!-- ========================================== -->
+            <section id="tab-add" class="tab-section hidden max-w-2xl mx-auto">
+                <div class="bg-white rounded-2xl border border-zinc-200/80 shadow-sm overflow-hidden">
+                    <!-- Form Header -->
+                    <div class="px-5 py-4 sm:px-6 sm:py-5 border-b border-zinc-100 bg-zinc-900 text-white flex items-center justify-between">
                         <div>
-                            <label for="reporterName" class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1.5">
-                                ชื่อผู้แจ้ง / เบอร์ติดต่อ (ถ้ามี)
+                            <h2 class="text-base sm:text-lg font-bold flex items-center gap-2">
+                                <i class="fa-solid fa-screwdriver-wrench text-amber-400 text-sm"></i>
+                                <span>แบบฟอร์มแจ้งซ่อมบำรุง (เชื่อมข้อมูล SSO)</span>
+                            </h2>
+                            <p class="text-xs text-zinc-300 mt-0.5">ระบบดึงชื่อผู้แจ้งและบ้านเลขที่จากบัญชีผู้ใช้งานกลางของคุณให้อัตโนมัติ</p>
+                        </div>
+                        <span class="text-xs px-2.5 py-1 rounded-lg bg-white/10 text-zinc-200 font-medium">
+                            เริ่มต้น: รอซ่อม
+                        </span>
+                    </div>
+
+                    <!-- Form Body -->
+                    <form id="maintenanceForm" class="p-5 sm:p-6 space-y-5">
+                        <!-- 1. เลือกสถานที่ (Dropdown) -->
+                        <div>
+                            <label for="reportLocation" class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-2">
+                                1. สถานที่เกิดปัญหา <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="reporterName" 
-                                placeholder="เช่น ลูกบ้าน 99/158 หรือ รปภ."
-                                class="w-full bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:bg-white focus:border-zinc-900 transition"
+                            <div class="relative">
+                                <select 
+                                    id="reportLocation" 
+                                    required 
+                                    class="w-full appearance-none bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl px-4 py-3 pr-10 focus:outline-none focus:bg-white focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 transition"
+                                >
+                                    <option value="" disabled selected>-- เลือกสถานที่ภายในหมู่บ้านลัดดารมย์ --</option>
+                                    <option value="อาคารนิติ">อาคารนิติ (Juristic Office & Clubhouse)</option>
+                                    <option value="ซาวน่า">ซาวน่า (Sauna & Steam Room)</option>
+                                    <option value="ฟิตเนส">ฟิตเนส (Fitness Center)</option>
+                                    <option value="ไฟแสงสว่าง">ไฟแสงสว่าง (Street & Garden Lighting)</option>
+                                    <option value="อื่นๆ">อื่นๆ (พื้นที่ส่วนกลาง / ถนนโครงการ / สวน)</option>
+                                </select>
+                                <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-xs pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <!-- ระบุจุดเพิ่มเติมหรือผู้แจ้ง (ดึงจาก Central SSO อัตโนมัติ) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label for="reportSubLocation" class="block text-xs font-semibold uppercase tracking-wider text-zinc-700">
+                                        จุดสังเกต / บ้านเลขที่
+                                    </label>
+                                    <span class="text-[10px] font-semibold text-emerald-600"><i class="fa-solid fa-wand-magic-sparkles mr-0.5"></i>ดึงจาก SSO</span>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    id="reportSubLocation" 
+                                    placeholder="เช่น บ้าน 99/158, หน้าซอย 4..."
+                                    class="w-full bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:bg-white focus:border-zinc-900 transition"
+                                >
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label for="reporterName" class="block text-xs font-semibold uppercase tracking-wider text-zinc-700">
+                                        ชื่อผู้แจ้ง / เบอร์ติดต่อ
+                                    </label>
+                                    <span class="text-[10px] font-semibold text-emerald-600"><i class="fa-solid fa-check-circle mr-0.5"></i>ยืนยันตัวตนแล้ว</span>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    id="reporterName" 
+                                    placeholder="เช่น ลูกบ้าน 99/158 หรือ รปภ."
+                                    class="w-full bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:bg-white focus:border-zinc-900 transition"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- 2. ระดับความด่วน (Radio Cards) -->
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-2">
+                                2. ระดับความด่วน <span class="text-red-500">*</span>
+                            </label>
+                            <div class="grid grid-cols-3 gap-2.5">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="reportUrgency" value="ปกติ" class="peer sr-only" checked>
+                                    <div class="p-3 rounded-xl border border-zinc-200 bg-zinc-50 peer-checked:bg-zinc-900 peer-checked:text-white peer-checked:border-zinc-900 transition text-center">
+                                        <i class="fa-regular fa-clock text-sm mb-1 block"></i>
+                                        <span class="text-xs font-semibold block">ปกติ</span>
+                                        <span class="text-[10px] opacity-75 block">ภายใน 1-3 วัน</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="reportUrgency" value="ด่วน" class="peer sr-only">
+                                    <div class="p-3 rounded-xl border border-zinc-200 bg-zinc-50 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition text-center">
+                                        <i class="fa-solid fa-bolt text-sm mb-1 block"></i>
+                                        <span class="text-xs font-semibold block">ด่วน</span>
+                                        <span class="text-[10px] opacity-85 block">ภายใน 24 ชม.</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="reportUrgency" value="ด่วนมาก" class="peer sr-only">
+                                    <div class="p-3 rounded-xl border border-zinc-200 bg-zinc-50 peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition text-center">
+                                        <i class="fa-solid fa-triangle-exclamation text-sm mb-1 block"></i>
+                                        <span class="text-xs font-semibold block">ด่วนมาก</span>
+                                        <span class="text-[10px] opacity-85 block">ตรวจสอบทันที</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 3. รายละเอียดปัญหา (Textarea) -->
+                        <div>
+                            <label for="reportDescription" class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-2">
+                                3. รายละเอียดปัญหาและการชำรุด <span class="text-red-500">*</span>
+                            </label>
+                            <textarea 
+                                id="reportDescription" 
+                                rows="4" 
+                                required
+                                placeholder="ระบุอาการเสีย ลักษณะปัญหา หรือความเสียหายที่พบอย่างชัดเจน..."
+                                class="w-full bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl p-3.5 focus:outline-none focus:bg-white focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 transition resize-none"
+                            ></textarea>
+                        </div>
+
+                        <!-- 4. ระบบอัปโหลดรูปภาพ -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700">
+                                    4. รูปถ่ายหน้างาน (บีบอัดอัตโนมัติ)
+                                </label>
+                                <span class="text-[11px] text-zinc-400">ล้างรูปอัตโนมัติเมื่องานเสร็จเกิน 90 วัน</span>
+                            </div>
+
+                            <!-- Dropzone / File Trigger -->
+                            <div id="uploadDropzone" class="relative border-2 border-dashed border-zinc-300 hover:border-zinc-900 rounded-2xl bg-zinc-50/70 p-5 text-center transition cursor-pointer">
+                                <input 
+                                    type="file" 
+                                    id="reportImageInput" 
+                                    accept="image/*" 
+                                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                >
+                                <div id="uploadPlaceholder" class="space-y-2 py-2">
+                                    <div class="w-12 h-12 rounded-2xl bg-white border border-zinc-200 shadow-sm flex items-center justify-center mx-auto text-zinc-700">
+                                        <i class="fa-solid fa-camera text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs sm:text-sm font-semibold text-zinc-800">แตะเพื่อถ่ายภาพ หรือเลือกรูปจากอัลบั้ม</p>
+                                        <p class="text-[11px] text-zinc-500 mt-0.5">ระบบจะบีบอัดภาพอัตโนมัติทุกครั้งก่อนบันทึกเพื่อประหยัดพื้นที่</p>
+                                    </div>
+                                </div>
+
+                                <!-- Image Preview Box -->
+                                <div id="imagePreviewContainer" class="hidden relative z-20">
+                                    <img id="imagePreviewElement" src="" alt="Preview" class="w-full max-h-64 object-cover rounded-xl border border-zinc-200 shadow-sm mx-auto">
+                                    <div class="mt-3 flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-zinc-200">
+                                        <span id="imageFileName" class="text-xs text-zinc-600 truncate max-w-[200px]">photo.jpg</span>
+                                        <button type="button" id="btnRemoveImage" class="text-xs font-semibold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                            <span>ลบรูปภาพ</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Upload Progress Bar -->
+                            <div id="uploadProgressWrapper" class="hidden mt-3 bg-zinc-100 rounded-xl p-3 border border-zinc-200">
+                                <div class="flex items-center justify-between text-xs font-medium text-zinc-700 mb-1.5">
+                                    <span id="uploadProgressStatus"><i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-bounce"></i>กำลังบีบอัดรูปภาพและบันทึก...</span>
+                                    <span id="uploadProgressPercent">35%</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-zinc-200 rounded-full overflow-hidden">
+                                    <div id="uploadProgressBar" class="h-full bg-zinc-900 transition-all duration-300" style="width: 35%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="pt-2 flex items-center gap-3">
+                            <button 
+                                type="button" 
+                                onclick="window.switchTab('list')" 
+                                class="px-5 py-3 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700 text-sm font-medium transition cursor-pointer"
                             >
-                        </div>
-                    </div>
-
-                    <!-- 2. ระดับความด่วน (Radio Cards) -->
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-2">
-                            2. ระดับความด่วน <span class="text-red-500">*</span>
-                        </label>
-                        <div class="grid grid-cols-3 gap-2.5">
-                            <!-- ปกติ -->
-                            <label class="cursor-pointer">
-                                <input type="radio" name="reportUrgency" value="ปกติ" class="peer sr-only" checked>
-                                <div class="p-3 rounded-xl border border-zinc-200 bg-zinc-50 peer-checked:bg-zinc-900 peer-checked:text-white peer-checked:border-zinc-900 transition text-center">
-                                    <i class="fa-regular fa-clock text-sm mb-1 block"></i>
-                                    <span class="text-xs font-semibold block">ปกติ</span>
-                                    <span class="text-[10px] opacity-75 block">ภายใน 1-3 วัน</span>
-                                </div>
-                            </label>
-                            <!-- ด่วน -->
-                            <label class="cursor-pointer">
-                                <input type="radio" name="reportUrgency" value="ด่วน" class="peer sr-only">
-                                <div class="p-3 rounded-xl border border-zinc-200 bg-zinc-50 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 transition text-center">
-                                    <i class="fa-solid fa-bolt text-sm mb-1 block"></i>
-                                    <span class="text-xs font-semibold block">ด่วน</span>
-                                    <span class="text-[10px] opacity-85 block">ภายใน 24 ชม.</span>
-                                </div>
-                            </label>
-                            <!-- ด่วนมาก -->
-                            <label class="cursor-pointer">
-                                <input type="radio" name="reportUrgency" value="ด่วนมาก" class="peer sr-only">
-                                <div class="p-3 rounded-xl border border-zinc-200 bg-zinc-50 peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 transition text-center">
-                                    <i class="fa-solid fa-triangle-exclamation text-sm mb-1 block"></i>
-                                    <span class="text-xs font-semibold block">ด่วนมาก</span>
-                                    <span class="text-[10px] opacity-85 block">ตรวจสอบทันที</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- 3. รายละเอียดปัญหา (Textarea) -->
-                    <div>
-                        <label for="reportDescription" class="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-2">
-                            3. รายละเอียดปัญหาและการชำรุด <span class="text-red-500">*</span>
-                        </label>
-                        <textarea 
-                            id="reportDescription" 
-                            rows="4" 
-                            required
-                            placeholder="ระบุอาการเสีย ลักษณะปัญหา หรือความเสียหายที่พบอย่างชัดเจน..."
-                            class="w-full bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl p-3.5 focus:outline-none focus:bg-white focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 transition resize-none"
-                        ></textarea>
-                    </div>
-
-                    <!-- 4. ระบบอัปโหลดรูปภาพ -->
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-700">
-                                4. รูปถ่ายหน้างาน (บีบอัดอัตโนมัติ)
-                            </label>
-                            <span class="text-[11px] text-zinc-400">ล้างรูปอัตโนมัติเมื่องานเสร็จเกิน 90 วัน</span>
-                        </div>
-
-                        <!-- Dropzone / File Trigger -->
-                        <div id="uploadDropzone" class="relative border-2 border-dashed border-zinc-300 hover:border-zinc-900 rounded-2xl bg-zinc-50/70 p-5 text-center transition cursor-pointer">
-                            <input 
-                                type="file" 
-                                id="reportImageInput" 
-                                accept="image/*" 
-                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                ยกเลิก
+                            </button>
+                            <button 
+                                type="submit" 
+                                id="btnSubmitReport" 
+                                class="flex-1 py-3 px-6 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
                             >
-                            <div id="uploadPlaceholder" class="space-y-2 py-2">
-                                <div class="w-12 h-12 rounded-2xl bg-white border border-zinc-200 shadow-sm flex items-center justify-center mx-auto text-zinc-700">
-                                    <i class="fa-solid fa-camera text-lg"></i>
-                                </div>
-                                <div>
-                                    <p class="text-xs sm:text-sm font-semibold text-zinc-800">แตะเพื่อถ่ายภาพ หรือเลือกรูปจากอัลบั้ม</p>
-                                    <p class="text-[11px] text-zinc-500 mt-0.5">ระบบจะบีบอัดภาพอัตโนมัติทุกครั้งก่อนบันทึกเพื่อประหยัดพื้นที่</p>
-                                </div>
-                            </div>
-
-                            <!-- Image Preview Box -->
-                            <div id="imagePreviewContainer" class="hidden relative z-20">
-                                <img id="imagePreviewElement" src="" alt="Preview" class="w-full max-h-64 object-cover rounded-xl border border-zinc-200 shadow-sm mx-auto">
-                                <div class="mt-3 flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-zinc-200">
-                                    <span id="imageFileName" class="text-xs text-zinc-600 truncate max-w-[200px]">photo.jpg</span>
-                                    <button type="button" id="btnRemoveImage" class="text-xs font-semibold text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                        <span>ลบรูปภาพ</span>
-                                    </button>
-                                </div>
-                            </div>
+                                <i class="fa-solid fa-paper-plane"></i>
+                                <span>ส่งใบแจ้งซ่อมบำรุง</span>
+                            </button>
                         </div>
+                    </form>
+                </div>
+            </section>
 
-                        <!-- Upload Progress Bar -->
-                        <div id="uploadProgressWrapper" class="hidden mt-3 bg-zinc-100 rounded-xl p-3 border border-zinc-200">
-                            <div class="flex items-center justify-between text-xs font-medium text-zinc-700 mb-1.5">
-                                <span id="uploadProgressStatus"><i class="fa-solid fa-cloud-arrow-up mr-1.5 animate-bounce"></i>กำลังบีบอัดรูปภาพและบันทึก...</span>
-                                <span id="uploadProgressPercent">35%</span>
-                            </div>
-                            <div class="w-full h-1.5 bg-zinc-200 rounded-full overflow-hidden">
-                                <div id="uploadProgressBar" class="h-full bg-zinc-900 transition-all duration-300" style="width: 35%"></div>
-                            </div>
+            <!-- ========================================== -->
+            <!-- TAB 3: แดชบอร์ดนิติ (JURISTIC DASHBOARD)      -->
+            <!-- ========================================== -->
+            <section id="tab-dashboard" class="tab-section hidden space-y-6">
+                <!-- Dashboard Title & Quick Tools -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-md bg-zinc-900 text-white text-[11px] font-semibold tracking-wide uppercase">Juristic Console</span>
+                            <h2 class="text-lg font-bold text-zinc-900">แดชบอร์ดนิติบุคคล & คลังประวัติงานที่เสร็จสิ้น</h2>
                         </div>
+                        <p class="text-xs text-zinc-500 mt-1">สรุปสถิติงานซ่อมบำรุงประจำเดือนที่เลือก และตารางรวบรวมงานที่ดำเนินการเสร็จสิ้นแล้ว</p>
                     </div>
-
-                    <!-- Submit Buttons -->
-                    <div class="pt-2 flex items-center gap-3">
-                        <button 
-                            type="button" 
-                            onclick="window.switchTab('list')" 
-                            class="px-5 py-3 rounded-xl border border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700 text-sm font-medium transition cursor-pointer"
-                        >
-                            ยกเลิก
+                    
+                    <!-- Action Buttons (แสดงเฉพาะเจ้าหน้าที่/นิติ/แอดมิน) -->
+                    <div id="dashboardAdminTools" class="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto -mx-1 px-1 py-1">
+                        <button onclick="window.migrateOldReports()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] sm:text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                            <i class="fa-solid fa-cloud-arrow-down"></i>
+                            <span>ดึงข้อมูลล่าสุดกลับมา (Migrate)</span>
                         </button>
-                        <button 
-                            type="submit" 
-                            id="btnSubmitReport" 
-                            class="flex-1 py-3 px-6 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
-                        >
-                            <i class="fa-solid fa-paper-plane"></i>
-                            <span>ส่งใบแจ้งซ่อมบำรุง</span>
+                        <button onclick="window.openCleanupModal()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] sm:text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                            <i class="fa-solid fa-broom"></i>
+                            <span>ล้างรูปงานเก่า (เกิน 90 วัน)</span>
+                        </button>
+                        <button onclick="window.seedDemoReports()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 text-[11px] sm:text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                            <i class="fa-solid fa-database"></i>
+                            <span>เพิ่มข้อมูลจำลอง</span>
+                        </button>
+                        <button onclick="window.exportReportsCSV()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] sm:text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span>ส่งออก CSV</span>
                         </button>
                     </div>
-                </form>
-            </div>
-        </section>
-
-        <!-- ========================================== -->
-        <!-- TAB 3: แดชบอร์ดนิติ (JURISTIC DASHBOARD)      -->
-        <!-- ========================================== -->
-        <section id="tab-dashboard" class="tab-section hidden space-y-6">
-            <!-- Dashboard Title & Quick Tools -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm">
-                <div class="flex-shrink-0">
-                    <div class="flex items-center gap-2">
-                        <span class="px-2.5 py-0.5 rounded-md bg-zinc-900 text-white text-[11px] font-semibold tracking-wide uppercase">Juristic Console</span>
-                        <h2 class="text-lg font-bold text-zinc-900">แดชบอร์ดนิติบุคคล</h2>
-                    </div>
-                    <p class="text-xs text-zinc-500 mt-1">สรุปสถิติงานซ่อมบำรุงประจำเดือนที่เลือก และเครื่องมือจัดการฐานข้อมูล</p>
                 </div>
-                
-                <!-- Action Buttons -->
-                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto -mx-1 px-1 py-1">
-                    <button onclick="window.migrateOldReports()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] sm:text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm">
-                        <i class="fa-solid fa-cloud-arrow-down"></i>
-                        <span>ดึงข้อมูลล่าสุดกลับมา (Migrate)</span>
-                    </button>
-                    <button onclick="window.openCleanupModal()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] sm:text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-sm">
-                        <i class="fa-solid fa-broom"></i>
-                        <span>ล้างรูปงานเก่า (เกิน 90 วัน)</span>
-                    </button>
-                    <button onclick="window.seedDemoReports()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl border border-zinc-200 bg-zinc-50 hover:bg-zinc-100 text-zinc-700 text-[11px] sm:text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-sm">
-                        <i class="fa-solid fa-database"></i>
-                        <span>เพิ่มข้อมูลจำลอง</span>
-                    </button>
-                    <button onclick="window.exportReportsCSV()" class="flex-shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] sm:text-xs font-medium transition flex items-center gap-1.5 cursor-pointer shadow-sm">
-                        <i class="fa-solid fa-file-csv"></i>
-                        <span>ส่งออก CSV</span>
-                    </button>
-                </div>
-            </div>
 
-            <!-- Real-time Summary Cards (4 Cards) -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-                <!-- Card 1: งานทั้งหมด -->
-                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-zinc-200/80 shadow-sm flex flex-col justify-between">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">งานในเดือนนี้</span>
-                        <div class="w-9 h-9 rounded-xl bg-zinc-100 text-zinc-800 flex items-center justify-center">
-                            <i class="fa-solid fa-layer-group text-sm"></i>
+                <!-- Real-time Summary Cards (4 Cards) -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+                    <!-- Card 1: งานทั้งหมด -->
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-zinc-200/80 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-zinc-500 uppercase tracking-wider">งานในเดือนนี้</span>
+                            <div class="w-9 h-9 rounded-xl bg-zinc-100 text-zinc-800 flex items-center justify-center">
+                                <i class="fa-solid fa-layer-group text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div id="statTotal" class="text-2xl sm:text-3xl font-bold text-zinc-900">0</div>
+                            <p class="text-[11px] text-zinc-400 mt-0.5">รายการแจ้งซ่อมในเดือนที่เลือก</p>
                         </div>
                     </div>
-                    <div class="mt-4">
-                        <div id="statTotal" class="text-2xl sm:text-3xl font-bold text-zinc-900">0</div>
-                        <p class="text-[11px] text-zinc-400 mt-0.5">รายการแจ้งซ่อมในเดือนที่เลือก</p>
-                    </div>
-                </div>
 
-                <!-- Card 2: งานที่รอซ่อม (Red) -->
-                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-red-200/80 shadow-sm flex flex-col justify-between relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-red-600 uppercase tracking-wider">งานที่รอซ่อม</span>
-                        <div class="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
-                            <i class="fa-solid fa-circle-exclamation text-sm"></i>
+                    <!-- Card 2: งานที่รอซ่อม (Red) -->
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-red-200/80 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-red-600 uppercase tracking-wider">งานที่รอซ่อม</span>
+                            <div class="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                                <i class="fa-solid fa-circle-exclamation text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div id="statPending" class="text-2xl sm:text-3xl font-bold text-red-600">0</div>
+                            <p class="text-[11px] text-zinc-500 mt-0.5">รอมอบหมายช่างเข้าตรวจสอบ</p>
                         </div>
                     </div>
-                    <div class="mt-4">
-                        <div id="statPending" class="text-2xl sm:text-3xl font-bold text-red-600">0</div>
-                        <p class="text-[11px] text-zinc-500 mt-0.5">รอมอบหมายช่างเข้าตรวจสอบ</p>
-                    </div>
-                </div>
 
-                <!-- Card 3: กำลังดำเนินการ (Yellow/Amber) -->
-                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/80 shadow-sm flex flex-col justify-between relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-amber-600 uppercase tracking-wider">กำลังดำเนินการ</span>
-                        <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                            <i class="fa-solid fa-person-digging text-sm"></i>
+                    <!-- Card 3: กำลังดำเนินการ (Yellow/Amber) -->
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-amber-200/80 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-amber-600 uppercase tracking-wider">กำลังดำเนินการ</span>
+                            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                                <i class="fa-solid fa-person-digging text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div id="statInProgress" class="text-2xl sm:text-3xl font-bold text-amber-600">0</div>
+                            <p class="text-[11px] text-zinc-500 mt-0.5">ช่างกำลังซ่อมแซมหน้างาน</p>
                         </div>
                     </div>
-                    <div class="mt-4">
-                        <div id="statInProgress" class="text-2xl sm:text-3xl font-bold text-amber-600">0</div>
-                        <p class="text-[11px] text-zinc-500 mt-0.5">ช่างกำลังซ่อมแซมหน้างาน</p>
-                    </div>
-                </div>
 
-                <!-- Card 4: ซ่อมเสร็จแล้ว (Green) -->
-                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-emerald-200/80 shadow-sm flex flex-col justify-between relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">ซ่อมเสร็จแล้ว</span>
-                        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                            <i class="fa-solid fa-circle-check text-sm"></i>
+                    <!-- Card 4: ซ่อมเสร็จแล้ว (Green) -->
+                    <div class="bg-white p-4 sm:p-5 rounded-2xl border border-emerald-200/80 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">ซ่อมเสร็จแล้ว</span>
+                            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <i class="fa-solid fa-circle-check text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div id="statCompleted" class="text-2xl sm:text-3xl font-bold text-emerald-600">0</div>
+                            <p id="statCompletionRate" class="text-[11px] text-emerald-600 font-medium mt-0.5">อัตราสำเร็จ 0%</p>
                         </div>
                     </div>
-                    <div class="mt-4">
-                        <div id="statCompleted" class="text-2xl sm:text-3xl font-bold text-emerald-600">0</div>
-                        <p id="statCompletionRate" class="text-[11px] text-emerald-600 font-medium mt-0.5">อัตราสำเร็จ 0%</p>
+                </div>
+
+                <!-- Location Breakdown Bar & Analytics -->
+                <div class="bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">
+                        สัดส่วนการแจ้งซ่อมแยกตามสถานที่ (เฉพาะเดือนที่เลือก)
+                    </h3>
+                    <div id="locationBreakdownContainer" class="grid grid-cols-2 sm:grid-cols-5 gap-3"></div>
+                </div>
+
+                <!-- Juristic Management Table -->
+                <div class="bg-white rounded-2xl border border-zinc-200/80 shadow-sm overflow-hidden">
+                    <div class="px-5 py-4 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-sm font-bold text-zinc-900">ตารางสรุปรายการแจ้งซ่อมทั้งหมด & ประวัติงานที่เสร็จสิ้น</h3>
+                            <p class="text-xs text-zinc-500">งานที่มีสถานะ "เสร็จสิ้น" จากหน้ารายการงานจะถูกย้ายมาเก็บไว้ที่ตารางนี้โดยอัตโนมัติ</p>
+                        </div>
+                        <span class="text-xs text-zinc-400">Collection: mnt_laddarom_reports</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-[650px]">
+                            <thead>
+                                <tr class="bg-zinc-50/80 border-b border-zinc-200 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                                    <th class="py-3.5 px-4">รูปภาพ</th>
+                                    <th class="py-3.5 px-4">สถานที่ / จุดสังเกต</th>
+                                    <th class="py-3.5 px-4">รายละเอียดปัญหา</th>
+                                    <th class="py-3.5 px-4">ผู้แจ้ง</th>
+                                    <th class="py-3.5 px-4">ความด่วน</th>
+                                    <th class="py-3.5 px-4">เวลาที่แจ้ง</th>
+                                    <th class="py-3.5 px-4">สถานะปัจจุบัน</th>
+                                    <th class="py-3.5 px-4 text-right">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardTableBody" class="divide-y divide-zinc-100 text-xs sm:text-sm">
+                                <!-- Populated dynamically via JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Location Breakdown Bar & Analytics -->
-            <div class="bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3">
-                    สัดส่วนการแจ้งซ่อมแยกตามสถานที่ (เฉพาะเดือนที่เลือก)
-                </h3>
-                <div id="locationBreakdownContainer" class="grid grid-cols-2 sm:grid-cols-5 gap-3"></div>
-            </div>
-
-            <!-- Juristic Management Table -->
-            <div class="bg-white rounded-2xl border border-zinc-200/80 shadow-sm overflow-hidden">
-                <div class="px-5 py-4 border-b border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                        <h3 class="text-sm font-bold text-zinc-900">ตารางสรุปรายการแจ้งซ่อม (สำหรับเจ้าหน้าที่นิติบุคคล)</h3>
-                        <p class="text-xs text-zinc-500">สามารถเปลี่ยนสถานะงานซ่อม หรือกดดูภาพขยายได้โดยตรงจากตาราง (แสดงทุกสถานะรวมถึงงานที่เสร็จสิ้น)</p>
-                    </div>
-                    <span class="text-xs text-zinc-400">Collection: mnt_laddarom_reports</span>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse min-w-[600px]">
-                        <thead>
-                            <tr class="bg-zinc-50/80 border-b border-zinc-200 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-                                <th class="py-3.5 px-4">รูปภาพ</th>
-                                <th class="py-3.5 px-4">สถานที่ / จุดสังเกต</th>
-                                <th class="py-3.5 px-4">รายละเอียดปัญหา</th>
-                                <th class="py-3.5 px-4">ความด่วน</th>
-                                <th class="py-3.5 px-4">เวลาที่แจ้ง</th>
-                                <th class="py-3.5 px-4">สถานะปัจจุบัน</th>
-                                <th class="py-3.5 px-4 text-right">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dashboardTableBody" class="divide-y divide-zinc-100 text-xs sm:text-sm">
-                            <!-- Populated dynamically via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
+        </div><!-- End Protected Wrapper -->
 
     </main>
 
@@ -618,6 +687,75 @@
     <!-- MODALS SECTION                              -->
     <!-- ========================================== -->
 
+    <!-- MODAL 0: ระบบยืนยันตัวตนและสลับบัญชีผู้ใช้งานกลาง (CENTRAL SSO SWITCHER MODAL) -->
+    <div id="ssoModal" class="fixed inset-0 z-50 hidden bg-zinc-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full border border-zinc-200 shadow-2xl overflow-hidden animate-[fadeIn_0.15s_ease-out]">
+            <div class="px-5 py-4 bg-zinc-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-fingerprint text-amber-400"></i>
+                    <h3 class="text-sm font-bold">บัญชีผู้ใช้งานกลาง (Central User SSO)</h3>
+                </div>
+                <button onclick="window.closeSsoModal()" class="text-zinc-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <!-- Current User Box -->
+                <div class="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 flex items-center justify-between">
+                    <div class="min-w-0">
+                        <div class="text-[10px] font-bold uppercase text-zinc-400">กำลังใช้งานในชื่อ</div>
+                        <div id="modalSsoCurrentName" class="text-sm font-bold text-zinc-900 truncate">-</div>
+                        <div id="modalSsoCurrentMeta" class="text-xs text-zinc-500 truncate">-</div>
+                    </div>
+                    <span id="modalSsoCurrentRole" class="px-2.5 py-1 rounded-lg bg-zinc-900 text-amber-400 text-[10px] font-bold uppercase">-</span>
+                </div>
+
+                <!-- Login Form with Central Account -->
+                <form id="ssoQuickLoginForm" class="space-y-3 pt-1 border-t border-zinc-100">
+                    <div class="text-xs font-bold text-zinc-800">ล็อกอินด้วยบัญชีจากระบบกลาง (sys_central_users)</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <input type="text" id="ssoLoginId" required placeholder="เบอร์โทร หรือ Username" class="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-300 rounded-xl focus:outline-none focus:border-zinc-900">
+                        <input type="password" id="ssoLoginPin" required placeholder="รหัส PIN" class="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-300 rounded-xl focus:outline-none focus:border-zinc-900">
+                    </div>
+                    <button type="submit" class="w-full py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold transition cursor-pointer">
+                        <i class="fa-solid fa-right-to-bracket mr-1"></i>ยืนยันตัวตนเข้าใช้งาน
+                    </button>
+                </form>
+
+                <!-- 1-Click Role Switcher for Instant Testing -->
+                <div class="pt-3 border-t border-zinc-100 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-zinc-500 uppercase">สลับร่างด่วนเพื่อทดสอบสิทธิ์ (1-Click Switch)</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="window.switchSsoPreset('admin', '123456')" class="p-2 rounded-xl border border-zinc-200 hover:border-zinc-900 bg-zinc-50 hover:bg-zinc-900 hover:text-white text-left transition cursor-pointer group">
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-zinc-900 text-amber-400">ADMIN / นิติ</span>
+                            <div class="text-xs font-bold mt-1 truncate">แอดมินใหญ่</div>
+                            <div class="text-[10px] opacity-70">ทำได้ทุกอย่าง</div>
+                        </button>
+                        <button type="button" onclick="window.switchSsoPreset('0811112222', '123456')" class="p-2 rounded-xl border border-zinc-200 hover:border-zinc-900 bg-zinc-50 hover:bg-zinc-900 hover:text-white text-left transition cursor-pointer group">
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">STAFF / ช่าง</span>
+                            <div class="text-xs font-bold mt-1 truncate">ช่างสมชาย</div>
+                            <div class="text-[10px] opacity-70">อัปเดตสถานะได้</div>
+                        </button>
+                        <button type="button" onclick="window.switchSsoPreset('0899998888', '123456')" class="p-2 rounded-xl border border-zinc-200 hover:border-zinc-900 bg-zinc-50 hover:bg-zinc-900 hover:text-white text-left transition cursor-pointer group">
+                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">RESIDENT</span>
+                            <div class="text-xs font-bold mt-1 truncate">บ้าน 99/158</div>
+                            <div class="text-[10px] opacity-70">แจ้งซ่อมอัตโนมัติ</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-zinc-100 flex items-center justify-between text-xs">
+                    <a href="central_auth.html" class="font-bold text-zinc-900 hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-user-gear"></i>
+                        <span>เปิดหน้าจัดการผู้ใช้งานกลาง (Central ID)</span>
+                    </a>
+                    <button type="button" onclick="window.closeSsoModal()" class="px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-700 font-semibold cursor-pointer">ปิด</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL 1: แก้ไข/อัปเดตสถานะงานซ่อม -->
     <div id="statusModal" class="fixed inset-0 z-50 hidden bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full border border-zinc-200 shadow-2xl overflow-hidden animate-[fadeIn_0.15s_ease-out]">
@@ -631,7 +769,7 @@
                     <div class="text-zinc-600 line-clamp-2" id="modalReportDesc">-</div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-2">เลือกสถานะใหม่</label>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-2">เลือกสถานะใหม่ (เมื่อเลือก "เสร็จสิ้น" งานจะย้ายไปแดชบอร์ดนิติ)</label>
                     <div class="space-y-2">
                         <label class="flex items-center justify-between p-3 rounded-xl border border-zinc-200 cursor-pointer hover:bg-red-50/40 transition">
                             <div class="flex items-center gap-2.5"><span class="w-3 h-3 rounded-full bg-red-500"></span><span class="text-sm font-semibold text-zinc-900">รอซ่อม</span></div>
@@ -642,7 +780,7 @@
                             <input type="radio" name="modalStatusRadio" value="กำลังดำเนินการ" class="w-4 h-4 accent-zinc-900">
                         </label>
                         <label class="flex items-center justify-between p-3 rounded-xl border border-zinc-200 cursor-pointer hover:bg-emerald-50/40 transition">
-                            <div class="flex items-center gap-2.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span><span class="text-sm font-semibold text-zinc-900">เสร็จสิ้น</span></div>
+                            <div class="flex items-center gap-2.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span><span class="text-sm font-semibold text-zinc-900">เสร็จสิ้น (ย้ายไปเก็บในแดชบอร์ดนิติ)</span></div>
                             <input type="radio" name="modalStatusRadio" value="เสร็จสิ้น" class="w-4 h-4 accent-zinc-900">
                         </label>
                     </div>
@@ -665,7 +803,7 @@
             <div class="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto"><i class="fa-solid fa-trash-can text-lg"></i></div>
             <div>
                 <h3 class="text-base font-bold text-zinc-900">ยืนยันการลบรายการแจ้งซ่อม?</h3>
-                <p id="deleteModalInfo" class="text-xs text-zinc-500 mt-1">ข้อมูลที่ถูกลบจะไม่สามารถกู้คืนได้</p>
+                <p id="deleteModalInfo" class="text-xs text-zinc-500 mt-1">เฉพาะแอดมินและนิติบุคคลเท่านั้นที่สามารถลบข้อมูลได้</p>
             </div>
             <div class="flex items-center gap-2.5 pt-1">
                 <button onclick="window.closeDeleteModal()" class="flex-1 py-2.5 rounded-xl border border-zinc-300 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer">ยกเลิก</button>
@@ -674,11 +812,9 @@
         </div>
     </div>
 
-    <!-- MODAL 3: Image Lightbox ดูภาพขยายพร้อมระบบถ่างนิ้วซูม (Pinch-to-Zoom & Zinc Theme) -->
+    <!-- MODAL 3: Image Lightbox ดูภาพขยายพร้อมระบบถ่างนิ้วซูม -->
     <div id="lightboxModal" onclick="if(event.target === this) window.closeLightbox()" class="fixed inset-0 z-50 hidden bg-zinc-950/80 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4">
         <div id="lightboxDialog" class="bg-white rounded-2xl max-w-2xl w-full border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] transition-all duration-200 animate-[fadeIn_0.15s_ease-out]">
-            
-            <!-- Top Instruction Banner (Dark Zinc) -->
             <div class="px-4 py-3 bg-zinc-900 text-white flex items-center justify-between gap-2 flex-shrink-0">
                 <div class="flex items-center gap-2 text-xs sm:text-sm font-semibold">
                     <i class="fa-solid fa-magnifying-glass-plus text-amber-400 text-sm"></i>
@@ -689,13 +825,8 @@
                 </button>
             </div>
 
-            <!-- Modal Body -->
             <div id="lightboxBody" class="p-3 sm:p-4 bg-zinc-100/80 flex-1 flex flex-col gap-3 overflow-y-auto">
-                
-                <!-- Image Card & Zoom Toolbar -->
                 <div class="bg-white rounded-2xl border border-zinc-200/90 shadow-xs overflow-hidden flex flex-col flex-1">
-                    
-                    <!-- Control Bar (Zinc Theme) -->
                     <div class="px-3 py-2.5 border-b border-zinc-100 flex flex-wrap items-center justify-between gap-2 bg-white flex-shrink-0">
                         <div class="flex items-center gap-2 min-w-0">
                             <div class="w-7 h-7 rounded-lg bg-zinc-100 text-zinc-800 flex items-center justify-center flex-shrink-0 border border-zinc-200">
@@ -706,24 +837,19 @@
                             </div>
                         </div>
 
-                        <!-- Zoom Action Buttons (Zinc Palette) -->
                         <div class="flex items-center gap-1.5 ml-auto">
                             <button type="button" onclick="window.adjustLightboxZoom(-0.25)" title="ซูมออก" class="w-8 h-8 rounded-xl bg-zinc-100 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-800 border border-zinc-200 flex items-center justify-center text-xs font-bold transition cursor-pointer">
                                 <i class="fa-solid fa-minus"></i>
                             </button>
-                            
                             <span id="lightboxZoomPercent" class="px-2.5 py-1 rounded-xl bg-zinc-100 text-zinc-900 border border-zinc-200 text-xs font-bold min-w-[54px] text-center select-none">
                                 100%
                             </span>
-                            
                             <button type="button" onclick="window.adjustLightboxZoom(0.25)" title="ซูมเข้า" class="w-8 h-8 rounded-xl bg-zinc-100 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-800 border border-zinc-200 flex items-center justify-center text-xs font-bold transition cursor-pointer">
                                 <i class="fa-solid fa-plus"></i>
                             </button>
-                            
                             <button type="button" onclick="window.resetLightboxZoom()" class="px-2.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 active:bg-zinc-300 text-zinc-700 border border-zinc-200 text-xs font-semibold transition cursor-pointer">
                                 รีเซ็ต
                             </button>
-                            
                             <button type="button" id="btnToggleFullscreen" onclick="window.toggleLightboxFullscreen()" class="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-950 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-xs cursor-pointer">
                                 <i id="fullscreenIcon" class="fa-solid fa-expand text-[11px]"></i>
                                 <span id="fullscreenText">เต็มจอ</span>
@@ -731,7 +857,6 @@
                         </div>
                     </div>
 
-                    <!-- Interactive Pinch-to-Zoom & Pan Viewport -->
                     <div id="lightboxViewport" class="zoom-viewport relative w-full h-[52vh] sm:h-[58vh] bg-zinc-950 overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing flex-1">
                         <img 
                             id="lightboxImage" 
@@ -743,7 +868,6 @@
                     </div>
                 </div>
 
-                <!-- Report Description & Technician Note Footer -->
                 <div id="lightboxFooterInfo" class="bg-white px-4 py-3 rounded-xl border border-zinc-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2 flex-shrink-0">
                     <div class="space-y-0.5">
                         <p id="lightboxCaption" class="text-xs sm:text-sm font-semibold text-zinc-900 leading-relaxed"></p>
@@ -751,12 +875,11 @@
                     </div>
                     <div id="lightboxStatusBadge" class="self-start sm:self-center flex-shrink-0"></div>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <!-- MODAL 4: ยืนยันการเคลียร์รูปภาพงานเก่าเกิน 90 วัน (Cleanup Modal) -->
+    <!-- MODAL 4: ยืนยันการเคลียร์รูปภาพงานเก่าเกิน 90 วัน -->
     <div id="cleanupModal" class="fixed inset-0 z-50 hidden bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-sm w-full border border-zinc-200 shadow-2xl p-5 text-center space-y-4 animate-[fadeIn_0.15s_ease-out]">
             <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-100">
@@ -789,7 +912,7 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // 1. การตั้งค่า Firebase Config และชื่อ Collection ใหม่
+        // 1. การตั้งค่า Firebase Config เดียวกับระบบผู้ใช้งานกลาง (Central User SSO)
         const userFirebaseConfig = {
             apiKey: "AIzaSyCXuj7Pl1JnBn2Y7BtyzkHHQm4MQH-isrM",
             authDomain: "time-attendance-69699.firebaseapp.com",
@@ -799,16 +922,17 @@
             appId: "1:793986547170:web:337bfe602d9b3e32f34dbb"
         };
 
-        // ชื่อ Collection ใหม่ที่มี Prefix ชัดเจน (Root Collection เพื่อความเป็นระเบียบในระยะยาว)
         const COLLECTION_NAME = 'mnt_laddarom_reports';
-        // ชื่อ App ID เดิม (ใช้สำหรับดึงข้อมูลเก่าตอนกดปุ่ม Migrate เท่านั้น)
+        const CENTRAL_USERS_COLLECTION = 'sys_central_users';
+        const SSO_STORAGE_KEY = 'LADDAROM_CENTRAL_SSO';
+        const REQUIRED_APP_KEY = 'mnt_laddarom';
         const LEGACY_APP_ID = 'laddarom-maintenance-app';
 
         const app = initializeApp(userFirebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // ฟังก์ชันคำนวณ monthKey รูปแบบ YYYY-MM (ตามเวลาท้องถิ่น)
+        // ฟังก์ชันคำนวณ monthKey รูปแบบ YYYY-MM
         function getMonthKeyFromTimestamp(timestampMs) {
             const d = timestampMs ? new Date(timestampMs) : new Date();
             if (isNaN(d.getTime())) {
@@ -827,14 +951,17 @@
             return date.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
         }
 
-        // 2. State Management
+        // 2. State Management (ทั้งฝั่งงานซ่อมและฝั่ง Central User)
         let currentUser = null;
+        let centralUserSession = null; // เก็บข้อมูลผู้ใช้จากระบบกลาง
+        let centralUsersDirectory = []; // ซิงค์รายชื่อผู้ใช้จากระบบกลางแบบ Real-time
         let selectedMonthKey = getMonthKeyFromTimestamp(Date.now());
         let allReports = [];
         let localFallbackStore = [];
         let currentTab = 'list';
         let activeStatusFilter = 'ALL';
         let activeLocationFilter = 'ALL';
+        let onlyMyUnitFilter = false;
         let searchQuery = '';
         let selectedImageFile = null;
         let selectedImagePreviewDataUrl = null;
@@ -851,6 +978,60 @@
             'ไฟแสงสว่าง': 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&w=800&q=80',
             'อื่นๆ': 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80'
         };
+
+        // บัญชีมาตรฐานกรณีฐานข้อมูลกลางยังว่าง
+        function getDefaultCentralUsers() {
+            return [
+                {
+                    id: 'user_super_admin',
+                    fullName: 'ผู้ดูแลระบบสูงสุด (Super Admin)',
+                    phoneOrUsername: 'admin',
+                    pin: '123456',
+                    unitOrDept: 'ส่วนกลาง (Headquarters)',
+                    role: 'super_admin',
+                    status: 'active',
+                    allowedApps: ['mnt_laddarom', 'time_attendance', 'visitor_vms', 'parcel_hub']
+                },
+                {
+                    id: 'user_staff_somchai',
+                    fullName: 'ช่างสมชาย ใจดี (หัวหน้าช่าง)',
+                    phoneOrUsername: '0811112222',
+                    pin: '123456',
+                    unitOrDept: 'ฝ่ายซ่อมบำรุงลัดดารมย์',
+                    role: 'staff',
+                    status: 'active',
+                    allowedApps: ['mnt_laddarom', 'time_attendance']
+                },
+                {
+                    id: 'user_resident_99_158',
+                    fullName: 'คุณกิตติพงศ์ (ลูกบ้านลัดดารมย์)',
+                    phoneOrUsername: '0899998888',
+                    pin: '123456',
+                    unitOrDept: 'บ้าน 99/158',
+                    role: 'resident',
+                    status: 'active',
+                    allowedApps: ['mnt_laddarom', 'parcel_hub']
+                }
+            ];
+        }
+
+        // ตรวจสอบสิทธิ์จาก Role ปัจจุบัน
+        function canUserUpdateStatus() {
+            if (!centralUserSession) return false;
+            return ['super_admin', 'juristic', 'staff'].includes(centralUserSession.role);
+        }
+
+        function canUserDeleteOrManageDb() {
+            if (!centralUserSession) return false;
+            return ['super_admin', 'juristic'].includes(centralUserSession.role);
+        }
+
+        function hasAppPermission() {
+            if (!centralUserSession) return false;
+            if (centralUserSession.status !== 'active') return false;
+            if (centralUserSession.role === 'super_admin') return true;
+            return Array.isArray(centralUserSession.allowedApps) && centralUserSession.allowedApps.includes(REQUIRED_APP_KEY);
+        }
 
         function withTimeout(promise, ms = 5000, timeoutMsg = 'Operation timed out') {
             return Promise.race([
@@ -915,7 +1096,195 @@
             return Boolean(imageUrl && imageUrl.trim() !== '' && !Object.values(DEFAULT_LOCATION_IMAGES).includes(imageUrl));
         }
 
-        // 4. ระบบสลับแท็บแบบ SPA และตัวเลือกเดือน
+        // ==========================================================
+        // 4. ระบบเชื่อมตัวตนผู้ใช้งานกลาง (Central User SSO Integration)
+        // ==========================================================
+        function loadCentralSession() {
+            try {
+                const raw = localStorage.getItem(SSO_STORAGE_KEY);
+                if (raw) {
+                    centralUserSession = JSON.parse(raw);
+                    return;
+                }
+            } catch (e) {
+                console.warn('SSO parse error:', e);
+            }
+            // หากเปิดแอปแจ้งซ่อมโดยตรงและยังไม่เคยล็อกอิน ให้ใช้โปรไฟล์เริ่มต้น (แอดมินใหญ่) เพื่อให้ทดสอบได้ทันที
+            centralUserSession = getDefaultCentralUsers()[0];
+            localStorage.setItem(SSO_STORAGE_KEY, JSON.stringify(centralUserSession));
+        }
+
+        function saveCentralSession(userObj) {
+            centralUserSession = userObj;
+            localStorage.setItem(SSO_STORAGE_KEY, JSON.stringify(userObj));
+            applyCentralUserUIAndPermissions();
+            renderAllViews();
+        }
+
+        function autofillFormFromCentralUser() {
+            if (!centralUserSession) return;
+            const subLocInput = document.getElementById('reportSubLocation');
+            const repNameInput = document.getElementById('reporterName');
+
+            if (subLocInput && centralUserSession.unitOrDept) {
+                subLocInput.value = centralUserSession.unitOrDept;
+            }
+            if (repNameInput) {
+                const phonePart = centralUserSession.phoneOrUsername && centralUserSession.phoneOrUsername !== 'admin'
+                    ? ` (${centralUserSession.phoneOrUsername})`
+                    : '';
+                repNameInput.value = `${centralUserSession.fullName}${phonePart}`;
+            }
+        }
+
+        function applyCentralUserUIAndPermissions() {
+            if (!centralUserSession) loadCentralSession();
+            const u = centralUserSession;
+
+            // อัปเดตปุ่มบน Header
+            document.getElementById('ssoHeaderAvatar').textContent = (u.fullName || 'U').charAt(0).toUpperCase();
+            document.getElementById('ssoHeaderName').textContent = u.fullName || 'ผู้ใช้งาน';
+            const roleLabels = {
+                super_admin: 'Super Admin (แอดมินสูงสุด)',
+                juristic: 'Juristic (นิติบุคคล)',
+                staff: 'Staff (ช่าง / รปภ.)',
+                resident: 'Resident (ลูกบ้าน)'
+            };
+            document.getElementById('ssoHeaderRole').textContent = `${roleLabels[u.role] || u.role} • ${u.unitOrDept || ''}`;
+
+            // อัปเดต Banner แสดงตัวตน
+            document.getElementById('bannerUserName').textContent = u.fullName;
+            document.getElementById('bannerRoleBadge').textContent = u.role.toUpperCase();
+            document.getElementById('bannerUnitBadge').textContent = u.unitOrDept || '-';
+
+            // อัปเดตข้อมูลใน Modal SSO
+            document.getElementById('modalSsoCurrentName').textContent = u.fullName;
+            document.getElementById('modalSsoCurrentMeta').textContent = `ไอดี: ${u.phoneOrUsername} • สังกัด: ${u.unitOrDept}`;
+            document.getElementById('modalSsoCurrentRole').textContent = u.role.toUpperCase();
+
+            // คำอธิบายสิทธิ์ตามบทบาท
+            const descEl = document.getElementById('bannerPermissionDesc');
+            if (u.role === 'super_admin' || u.role === 'juristic') {
+                descEl.textContent = 'สิทธิ์ระดับบริหาร: แจ้งซ่อมได้ • อัปเดตสถานะงานได้ • ลบรายการและจัดการฐานข้อมูลในแดชบอร์ดนิติได้ทั้งหมด';
+            } else if (u.role === 'staff') {
+                descEl.textContent = 'สิทธิ์เจ้าหน้าที่ช่าง/รปภ.: แจ้งซ่อมได้ • อัปเดตสถานะงานซ่อมและลงบันทึกช่างได้ (ไม่สามารถลบข้อมูลหลักได้)';
+            } else {
+                descEl.textContent = `สิทธิ์ลูกบ้าน (${u.unitOrDept}): ดึงชื่อและบ้านเลขที่ลงฟอร์มแจ้งซ่อมอัตโนมัติ • ติดตามสถานะงานซ่อมได้แบบ Real-time`;
+            }
+
+            // ซ่อน/แสดงเครื่องมือแอดมินตามสิทธิ์
+            const btnMigrateHeader = document.getElementById('btnMigrateHeader');
+            const adminTools = document.getElementById('dashboardAdminTools');
+            if (canUserDeleteOrManageDb()) {
+                btnMigrateHeader.classList.remove('hidden');
+                btnMigrateHeader.classList.add('inline-flex');
+                if (adminTools) adminTools.classList.remove('hidden');
+            } else {
+                btnMigrateHeader.classList.add('hidden');
+                btnMigrateHeader.classList.remove('inline-flex');
+                if (adminTools) adminTools.classList.add('hidden');
+            }
+
+            // ตรวจสอบว่าถูกระงับบัญชีหรือถูกตัดสิทธิ์เข้าแอปแจ้งซ่อมหรือไม่
+            const deniedBox = document.getElementById('ssoAccessDeniedBox');
+            const protectedWrapper = document.getElementById('appProtectedContent');
+            if (!hasAppPermission()) {
+                deniedBox.classList.remove('hidden');
+                protectedWrapper.classList.add('hidden');
+                if (u.status === 'suspended') {
+                    document.getElementById('deniedTitle').textContent = 'บัญชีของคุณถูกระงับสิทธิ์ชั่วคราว (Suspended)';
+                } else if (u.status === 'pending') {
+                    document.getElementById('deniedTitle').textContent = 'บัญชีของคุณอยู่ระหว่างรอแอดมินอนุมัติ (Pending)';
+                } else {
+                    document.getElementById('deniedTitle').textContent = 'คุณไม่ได้รับสิทธิ์เข้าถึงแอปแจ้งซ่อมลัดดารมย์';
+                }
+            } else {
+                deniedBox.classList.add('hidden');
+                protectedWrapper.classList.remove('hidden');
+            }
+
+            // กรอกชื่อและบ้านเลขที่ลงฟอร์มแจ้งซ่อมให้อัตโนมัติ
+            autofillFormFromCentralUser();
+        }
+
+        // ซิงค์ข้อมูลผู้ใช้จากคอลเลกชัน sys_central_users แบบ Real-time (ถ้าแอดมินสั่งแบนหรือเปลี่ยนสิทธิ์ จะมีผลทันที)
+        function subscribeToCentralUsers() {
+            const colRef = collection(db, CENTRAL_USERS_COLLECTION);
+            onSnapshot(colRef, (snap) => {
+                if (snap.empty) {
+                    centralUsersDirectory = getDefaultCentralUsers();
+                    return;
+                }
+                centralUsersDirectory = [];
+                snap.forEach(d => centralUsersDirectory.push({ id: d.id, ...d.data() }));
+
+                if (centralUserSession) {
+                    const liveMatch = centralUsersDirectory.find(u =>
+                        u.id === centralUserSession.id ||
+                        String(u.phoneOrUsername).toLowerCase() === String(centralUserSession.phoneOrUsername).toLowerCase()
+                    );
+                    if (liveMatch) {
+                        centralUserSession = liveMatch;
+                        localStorage.setItem(SSO_STORAGE_KEY, JSON.stringify(liveMatch));
+                        applyCentralUserUIAndPermissions();
+                        renderAllViews();
+                    }
+                }
+            }, () => {
+                centralUsersDirectory = getDefaultCentralUsers();
+            });
+        }
+
+        window.openSsoModal = () => document.getElementById('ssoModal').classList.remove('hidden');
+        window.closeSsoModal = () => document.getElementById('ssoModal').classList.add('hidden');
+
+        window.switchSsoPreset = function(username, pin) {
+            const pool = centralUsersDirectory.length > 0 ? centralUsersDirectory : getDefaultCentralUsers();
+            const found = pool.find(u => String(u.phoneOrUsername).toLowerCase() === String(username).toLowerCase())
+                || getDefaultCentralUsers().find(u => u.phoneOrUsername === username);
+
+            if (found) {
+                saveCentralSession(found);
+                window.closeSsoModal();
+                showToast(`สลับบัญชีเป็น "${found.fullName}" เรียบร้อยแล้ว`);
+            }
+        };
+
+        document.getElementById('ssoQuickLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const idVal = document.getElementById('ssoLoginId').value.trim().toLowerCase().replace(/[\s-]/g, '');
+            const pinVal = document.getElementById('ssoLoginPin').value.trim();
+
+            const pool = centralUsersDirectory.length > 0 ? centralUsersDirectory : getDefaultCentralUsers();
+            const matched = pool.find(u =>
+                String(u.phoneOrUsername).toLowerCase().replace(/[\s-]/g, '') === idVal &&
+                String(u.pin).trim() === pinVal
+            );
+
+            if (!matched) {
+                showToast('ไม่พบบัญชีผู้ใช้ หรือรหัส PIN ไม่ถูกต้อง', 'error');
+                return;
+            }
+
+            saveCentralSession(matched);
+            document.getElementById('ssoQuickLoginForm').reset();
+            window.closeSsoModal();
+            showToast(`เข้าสู่ระบบในชื่อ "${matched.fullName}" สำเร็จ`);
+        });
+
+        window.toggleMyUnitFilter = function() {
+            onlyMyUnitFilter = !onlyMyUnitFilter;
+            const btn = document.getElementById('btnFilterMyUnit');
+            if (onlyMyUnitFilter) {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-400 text-zinc-950 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs';
+                showToast(`กรองเฉพาะรายการของ: ${centralUserSession?.unitOrDept || centralUserSession?.fullName}`, 'info');
+            } else {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold bg-zinc-100 text-zinc-700 hover:bg-zinc-200 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer';
+            }
+            renderReportList();
+        };
+
+        // 5. ระบบสลับแท็บแบบ SPA และตัวเลือกเดือน
         window.switchTab = function(tabName) {
             currentTab = tabName;
             ['list', 'add', 'dashboard'].forEach(t => {
@@ -930,7 +1299,10 @@
                 }
             });
 
-            // ซ่อนแถบเลือกเดือนในหน้าฟอร์มแจ้งซ่อมใหม่
+            if (tabName === 'add') {
+                autofillFormFromCentralUser();
+            }
+
             const monthBar = document.getElementById('monthControlBar');
             if (tabName === 'add') {
                 monthBar.classList.add('hidden');
@@ -967,18 +1339,18 @@
             window.changeMonth(currentKey);
         };
 
-        // 5. เชื่อมต่อ Firestore (Root Collection: mnt_laddarom_reports)
+        // 6. เชื่อมต่อ Firestore (Root Collection: mnt_laddarom_reports)
         function getReportsCollectionRef() {
             return collection(db, COLLECTION_NAME);
         }
 
         function updateConnectionStatusUI(status, text) {
             const dot = document.getElementById('connectionDot');
-            document.getElementById('connectionText').textContent = text;
-            dot.className = `w-2 h-2 rounded-full ${status === 'online' ? 'bg-emerald-500' : (status === 'fallback' ? 'bg-amber-500' : 'bg-red-500')}`;
+            const textEl = document.getElementById('connectionText');
+            if (textEl) textEl.textContent = text;
+            if (dot) dot.className = `w-2 h-2 rounded-full ${status === 'online' ? 'bg-emerald-500' : (status === 'fallback' ? 'bg-amber-500' : 'bg-red-500')}`;
         }
 
-        // ดึงเฉพาะข้อมูลของเดือนที่เลือก (Query by Month)
         function subscribeToSelectedMonth() {
             if (unsubscribeFirestore) {
                 unsubscribeFirestore();
@@ -997,7 +1369,6 @@
                 updateConnectionStatusUI('online', 'ออนไลน์');
                 allReports = [];
                 snapshot.forEach(docSnap => allReports.push({ id: docSnap.id, ...docSnap.data() }));
-                // เรียงลำดับจากใหม่ไปเก่าในฝั่ง Client เพื่อไม่ต้องสร้าง Composite Index ใน Firebase
                 allReports.sort((a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0));
                 document.getElementById('listLoadingState').classList.add('hidden');
                 renderAllViews();
@@ -1012,14 +1383,12 @@
             });
         }
 
-        // ฟังก์ชันตรวจสอบและล้างรูปภาพที่เก่าเกิน 3 เดือน (90 วัน) อัตโนมัติ
         async function autoCleanupOldImages() {
             if (isUsingLocalFallback) return;
             const AUTO_CLEAN_KEY = 'mnt_laddarom_last_auto_clean';
             const lastRun = Number(localStorage.getItem(AUTO_CLEAN_KEY) || 0);
             const oneDayMs = 24 * 60 * 60 * 1000;
 
-            // ทำงานแค่วันละ 1 ครั้งเพื่อประหยัดโควต้าการอ่านข้อมูล
             if (Date.now() - lastRun < oneDayMs) return;
 
             try {
@@ -1054,22 +1423,30 @@
         }
 
         async function initAuthAndRealtimeListener() {
+            loadCentralSession();
+            applyCentralUserUIAndPermissions();
             updateMonthControlUI();
+
             try { currentUser = (await signInAnonymously(auth)).user; } 
             catch (e) { currentUser = { uid: 'guest-' + Date.now() }; }
 
+            subscribeToCentralUsers();
             subscribeToSelectedMonth();
-            // รันระบบตรวจสอบและเคลียร์รูปเก่าเกิน 3 เดือนอัตโนมัติในพื้นหลัง
             setTimeout(autoCleanupOldImages, 3500);
         }
 
-        // 6. ปุ่มดึงข้อมูลล่าสุดกลับมา (Migrate จาก Collection เดิม + เติม monthKey อัตโนมัติ)
+        // 7. ปุ่มดึงข้อมูลล่าสุดกลับมา (Migrate)
         window.migrateOldReports = async function() {
+            if (!canUserDeleteOrManageDb()) {
+                showToast('เฉพาะแอดมินและนิติบุคคลเท่านั้นที่ใช้คำสั่งนี้ได้', 'error');
+                return;
+            }
+
             const btnHeader = document.getElementById('btnMigrateHeader');
             const originalHtml = btnHeader ? btnHeader.innerHTML : '';
             if (btnHeader) {
                 btnHeader.disabled = true;
-                btnHeader.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>กำลังดึงข้อมูล...</span>`;
+                btnHeader.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i>`;
             }
 
             try {
@@ -1084,11 +1461,8 @@
                 let migratedCount = 0;
                 let latestFoundMonthKey = null;
 
-                // 1) ดึงจาก Path เดิม: artifacts/laddarom-maintenance-app/public/data/laddarom_reports
                 const legacyPathRef = collection(db, 'artifacts', LEGACY_APP_ID, 'public', 'data', 'laddarom_reports');
-                // 2) ดึงจาก Root เดิมเผื่อมี: laddarom_reports
                 const legacyRootRef = collection(db, 'laddarom_reports');
-                // 3) ตรวจสอบเอกสารใน mnt_laddarom_reports ที่อาจยังไม่มี monthKey
                 const currentColRef = getReportsCollectionRef();
 
                 const [snapLegacyPath, snapLegacyRoot, snapCurrent] = await Promise.allSettled([
@@ -1110,7 +1484,6 @@
                             latestFoundMonthKey = computedMonthKey;
                         }
 
-                        // ถ้าอยู่ใน Collection ปัจจุบันและมี monthKey อยู่แล้ว ไม่ต้องเขียนซ้ำ
                         if (isCurrentCollection && data.monthKey) return;
 
                         const targetDocRef = doc(db, COLLECTION_NAME, docSnap.id);
@@ -1134,7 +1507,6 @@
                     await Promise.all(writePromises);
                 }
 
-                // หากเดือนปัจจุบันไม่มีข้อมูล แต่พบข้อมูลในเดือนล่าสุด ให้สลับไปเดือนนั้นทันที
                 if (latestFoundMonthKey && latestFoundMonthKey !== selectedMonthKey && allReports.length === 0) {
                     window.changeMonth(latestFoundMonthKey);
                 } else {
@@ -1144,13 +1516,12 @@
                 if (migratedCount > 0) {
                     showToast(`ดึงข้อมูลเก่าและอัปเดตสำเร็จ ${migratedCount} รายการ!`);
                 } else if (latestFoundMonthKey) {
-                    showToast(`ข้อมูลทั้งหมดเป็นปัจจุบันแล้ว (เดือนล่าสุดที่มีข้อมูล: ${formatThaiMonthLabel(latestFoundMonthKey)})`, 'info');
+                    showToast(`ข้อมูลเป็นปัจจุบันแล้ว`, 'info');
                 } else {
                     showToast('ไม่พบข้อมูลค้างในระบบเดิม', 'info');
                 }
             } catch (err) {
-                console.error('Migration error:', err);
-                showToast('เกิดข้อผิดพลาดในการดึงข้อมูลเก่า กรุณาลองอีกครั้ง', 'error');
+                showToast('เกิดข้อผิดพลาดในการดึงข้อมูลเก่า', 'error');
             } finally {
                 if (btnHeader) {
                     btnHeader.disabled = false;
@@ -1159,7 +1530,7 @@
             }
         };
 
-        // 7. ฟังก์ชัน Render
+        // 8. ฟังก์ชัน Render (ซ่อนงานเสร็จสิ้นจากหน้าแรก + จำกัดปุ่มตาม Role)
         function renderAllViews() {
             renderReportList();
             renderDashboard();
@@ -1176,10 +1547,24 @@
 
         function renderReportList() {
             const container = document.getElementById('reportCardsContainer');
-            
+            const allowUpdate = canUserUpdateStatus();
+            const allowDelete = canUserDeleteOrManageDb();
+
             const filtered = allReports.filter(item => {
-                // ซ่อนงานที่ "เสร็จสิ้น" แล้วออกจากหน้ารายการงาน
+                // กฎเหล็ก: เมื่องานมีสถานะ "เสร็จสิ้น" ให้หายไปจากเมนูรายการงานทันที
                 if (item.status === 'เสร็จสิ้น') return false;
+
+                // กรองเฉพาะงานของตัวเอง/บ้านตัวเอง (เมื่อกดปุ่ม)
+                if (onlyMyUnitFilter && centralUserSession) {
+                    const myUnit = (centralUserSession.unitOrDept || '').toLowerCase();
+                    const myName = (centralUserSession.fullName || '').toLowerCase();
+                    const itemUnit = (item.subLocation || '').toLowerCase();
+                    const itemRep = (item.reporterName || '').toLowerCase();
+                    const isMine = (myUnit && itemUnit.includes(myUnit)) ||
+                                   (myName && itemRep.includes(myName)) ||
+                                   (item.createdByCentralId && item.createdByCentralId === centralUserSession.id);
+                    if (!isMine) return false;
+                }
 
                 const text = `${item.location||''} ${item.subLocation||''} ${item.description||''} ${item.reporterName||''} ${item.techNote||''}`.toLowerCase();
                 return (activeStatusFilter === 'ALL' || item.status === activeStatusFilter) &&
@@ -1189,7 +1574,6 @@
 
             document.getElementById('listTotalCount').textContent = `${filtered.length} รายการ`;
             
-            // ใช้ count ของงานที่ไม่ได้เสร็จสิ้นเพื่อดูว่าควรแสดงหน้าว่างหรือไม่
             const activeReportsCount = allReports.filter(r => r.status !== 'เสร็จสิ้น').length;
 
             if (activeReportsCount === 0) {
@@ -1217,20 +1601,26 @@
                             <div class="space-y-2">
                                 <div>
                                     <span class="text-xs font-bold uppercase text-zinc-900 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">${escapeHtml(report.location)}</span>
-                                    ${report.subLocation ? `<span class="text-xs text-zinc-500 ml-1">${escapeHtml(report.subLocation)}</span>` : ''}
+                                    ${report.subLocation ? `<span class="text-xs font-semibold text-zinc-600 ml-1">${escapeHtml(report.subLocation)}</span>` : ''}
                                 </div>
                                 <p class="text-sm text-zinc-800 leading-relaxed">${escapeHtml(report.description)}</p>
                                 ${report.techNote ? `<div class="bg-zinc-50 border border-zinc-200/80 rounded-xl p-2.5 text-xs text-zinc-600"><span class="font-semibold text-zinc-800">บันทึกช่าง:</span> ${escapeHtml(report.techNote)}</div>` : ''}
                             </div>
                             <div class="pt-3 border-t border-zinc-100 space-y-3">
                                 <div class="flex items-center justify-between text-[11px] text-zinc-400">
-                                    <span><i class="fa-regular fa-user mr-1"></i>${escapeHtml(report.reporterName || 'ไม่ระบุ')}</span>
+                                    <span class="truncate max-w-[160px]"><i class="fa-regular fa-user mr-1"></i>${escapeHtml(report.reporterName || 'ไม่ระบุ')}</span>
                                     <span><i class="fa-regular fa-clock mr-1"></i>${formatThaiDateTime(report.createdAtMs)}</span>
                                 </div>
+                                ${allowUpdate ? `
                                 <div class="flex gap-2">
-                                    <button onclick="window.openStatusModal('${report.id}')" class="flex-1 py-2 rounded-xl bg-zinc-900 text-white text-xs font-medium cursor-pointer"><i class="fa-solid fa-arrows-rotate mr-1"></i>อัปเดตสถานะ</button>
-                                    <button onclick="window.openDeleteModal('${report.id}')" class="px-3 py-2 rounded-xl border border-zinc-200 text-zinc-500 hover:bg-red-50 hover:text-red-600 cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+                                    <button onclick="window.openStatusModal('${report.id}')" class="flex-1 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium cursor-pointer transition"><i class="fa-solid fa-arrows-rotate mr-1"></i>อัปเดตสถานะ</button>
+                                    ${allowDelete ? `<button onclick="window.openDeleteModal('${report.id}')" class="px-3 py-2 rounded-xl border border-zinc-200 text-zinc-500 hover:bg-red-50 hover:text-red-600 cursor-pointer transition"><i class="fa-solid fa-trash-can"></i></button>` : ''}
                                 </div>
+                                ` : `
+                                <div class="text-[11px] text-center py-1.5 rounded-xl bg-zinc-50 text-zinc-500 border border-zinc-100">
+                                    <i class="fa-solid fa-shield-halved mr-1"></i>เจ้าหน้าที่กำลังติดตามงานซ่อมนี้
+                                </div>
+                                `}
                             </div>
                         </div>
                     </article>`;
@@ -1263,30 +1653,34 @@
 
             const tbody = document.getElementById('dashboardTableBody');
             if (allReports.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-zinc-400 text-xs">ไม่มีรายการแจ้งซ่อมในเดือนที่เลือก</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="py-10 text-center text-zinc-400 text-xs">ไม่มีรายการแจ้งซ่อมในเดือนที่เลือก</td></tr>`;
                 return;
             }
 
-            // ในหน้าแดชบอร์ดให้แสดงผลทุกรายการ (รวมงานที่เสร็จสิ้นแล้วด้วย)
+            const allowUpdate = canUserUpdateStatus();
+            const allowDelete = canUserDeleteOrManageDb();
+
+            // ในหน้าแดชบอร์ดนิติ แสดงครบทุกรายการ รวมถึงงานที่ "เสร็จสิ้น" ที่ถูกย้ายมาจากหน้าแรก
             tbody.innerHTML = allReports.map(r => {
                 const imgUrl = r.imageUrl || DEFAULT_LOCATION_IMAGES[r.location] || DEFAULT_LOCATION_IMAGES['อื่นๆ'];
                 return `
                     <tr class="hover:bg-zinc-50/90 transition">
                         <td class="py-3 px-4"><img src="${imgUrl}" onclick="window.openLightbox('${r.id}')" class="w-12 h-12 rounded-xl object-cover border cursor-zoom-in"></td>
                         <td class="py-3 px-4 font-semibold text-zinc-900"><div>${escapeHtml(r.location)}</div>${r.subLocation?`<div class="text-[11px] font-normal text-zinc-500">${escapeHtml(r.subLocation)}</div>`:''}</td>
-                        <td class="py-3 px-4 text-zinc-700 max-w-xs"><div class="line-clamp-2">${escapeHtml(r.description)}</div>${r.techNote?`<div class="text-[11px] text-zinc-500"><i class="fa-solid fa-wrench"></i> ${escapeHtml(r.techNote)}</div>`:''}</td>
+                        <td class="py-3 px-4 text-zinc-700 max-w-xs"><div class="line-clamp-2">${escapeHtml(r.description)}</div>${r.techNote?`<div class="text-[11px] text-emerald-700 font-medium mt-0.5"><i class="fa-solid fa-wrench mr-1"></i>${escapeHtml(r.techNote)}</div>`:''}</td>
+                        <td class="py-3 px-4 text-xs text-zinc-600">${escapeHtml(r.reporterName || '-')}</td>
                         <td class="py-3 px-4">${getUrgencyBadgeHTML(r.urgency)}</td>
                         <td class="py-3 px-4 text-xs text-zinc-500">${formatThaiDateTime(r.createdAtMs)}</td>
                         <td class="py-3 px-4">${getStatusBadgeHTML(r.status)}</td>
-                        <td class="py-3 px-4 text-right">
-                            <button onclick="window.openStatusModal('${r.id}')" class="px-2 py-1.5 rounded-lg bg-zinc-900 text-white text-[11px] mr-1 cursor-pointer">สถานะ</button>
-                            <button onclick="window.openDeleteModal('${r.id}')" class="px-2 py-1.5 rounded-lg border text-zinc-500 hover:text-red-600 cursor-pointer"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                        <td class="py-3 px-4 text-right whitespace-nowrap">
+                            ${allowUpdate ? `<button onclick="window.openStatusModal('${r.id}')" class="px-2.5 py-1.5 rounded-lg bg-zinc-900 text-white text-[11px] mr-1 cursor-pointer">สถานะ</button>` : '-'}
+                            ${allowDelete ? `<button onclick="window.openDeleteModal('${r.id}')" class="px-2 py-1.5 rounded-lg border text-zinc-500 hover:text-red-600 cursor-pointer"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
                         </td>
                     </tr>`;
             }).join('');
         }
 
-        // 8. Preview & Compress Image Logic
+        // 9. Preview & Compress Image Logic
         const imageInput = document.getElementById('reportImageInput');
         imageInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
@@ -1294,7 +1688,6 @@
             if (!file.type.startsWith('image/')) { showToast('รองรับไฟล์รูปภาพเท่านั้น', 'error'); return; }
             selectedImageFile = file;
             try {
-                // บีบอัดภาพเสมอเมื่อเลือกรูป
                 selectedImagePreviewDataUrl = await compressImageToDataUrl(file, 800, 0.6);
                 const approxKb = Math.round((selectedImagePreviewDataUrl.length * 3) / 4 / 1024);
                 document.getElementById('imageFileName').textContent = `${file.name} (บีบอัดเหลือ ~${approxKb} KB)`;
@@ -1320,7 +1713,7 @@
             document.getElementById('uploadPlaceholder').classList.remove('hidden');
         }
 
-        // 9. Submit Form (บังคับบีบอัดรูป + บันทึก monthKey)
+        // 10. Submit Form (ผูกข้อมูลผู้แจ้งจาก Central User SSO อัตโนมัติ)
         document.getElementById('maintenanceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const location = document.getElementById('reportLocation').value;
@@ -1353,8 +1746,8 @@
 
             const newReport = {
                 location,
-                subLocation: subLoc,
-                reporterName: repName || 'ลูกบ้าน',
+                subLocation: subLoc || centralUserSession?.unitOrDept || '',
+                reporterName: repName || centralUserSession?.fullName || 'ลูกบ้าน',
                 description: desc,
                 urgency,
                 status: 'รอซ่อม',
@@ -1363,7 +1756,9 @@
                 createdAtMs: nowMs,
                 updatedAtMs: nowMs,
                 monthKey: reportMonthKey,
-                createdBy: currentUser?.uid || 'guest'
+                createdBy: currentUser?.uid || 'guest',
+                createdByCentralId: centralUserSession?.id || '',
+                createdByRole: centralUserSession?.role || 'resident'
             };
 
             try {
@@ -1376,11 +1771,11 @@
                 if (selectedImageFile) { pBar.style.width = '100%'; pPercent.textContent = '100%'; }
                 
                 document.getElementById('maintenanceForm').reset();
+                autofillFormFromCentralUser();
                 clearImageSelection();
                 pWrapper.classList.add('hidden');
                 showToast('ส่งใบแจ้งซ่อมสำเร็จ');
 
-                // สลับไปยังเดือนปัจจุบันเพื่อให้เห็นรายการที่เพิ่งแจ้งทันที
                 if (selectedMonthKey !== reportMonthKey) {
                     window.changeMonth(reportMonthKey);
                 } else if (isUsingLocalFallback) {
@@ -1397,12 +1792,16 @@
             }
         });
 
-        // 10. Modals Logic (Update, Delete, Lightbox, Filter)
+        // 11. Modals Logic (Update, Delete, Lightbox, Filter)
         window.openStatusModal = (id) => {
+            if (!canUserUpdateStatus()) {
+                showToast('เฉพาะช่าง นิติบุคคล หรือแอดมินเท่านั้นที่เปลี่ยนสถานะงานได้', 'error');
+                return;
+            }
             const r = allReports.find(x => x.id === id);
             if (!r) return;
             editingReportId = id;
-            document.getElementById('modalReportLocation').textContent = r.location;
+            document.getElementById('modalReportLocation').textContent = `${r.location} ${r.subLocation ? `(${r.subLocation})` : ''}`;
             document.getElementById('modalReportDesc').textContent = r.description;
             document.getElementById('modalTechNote').value = r.techNote || '';
             document.querySelectorAll('input[name="modalStatusRadio"]').forEach(radio => radio.checked = (radio.value === r.status));
@@ -1425,6 +1824,7 @@
                     await updateDoc(doc(db, COLLECTION_NAME, editingReportId), {
                         status: newStatus,
                         techNote,
+                        updatedByCentralUser: centralUserSession?.fullName || '',
                         updatedAtMs: Date.now()
                     });
                 } else {
@@ -1437,7 +1837,9 @@
                     allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
                     renderAllViews();
                 }
-                showToast('อัปเดตสถานะสำเร็จ');
+                showToast(newStatus === 'เสร็จสิ้น'
+                    ? 'อัปเดตเป็น "เสร็จสิ้น" แล้ว (ย้ายรายการไปเก็บที่แดชบอร์ดนิติ)'
+                    : 'อัปเดตสถานะสำเร็จ');
                 window.closeStatusModal();
             } catch (e) {
                 showToast('อัปเดตล้มเหลว', 'error');
@@ -1448,6 +1850,10 @@
         };
 
         window.openDeleteModal = (id) => {
+            if (!canUserDeleteOrManageDb()) {
+                showToast('เฉพาะแอดมินและนิติบุคคลเท่านั้นที่ลบรายการได้', 'error');
+                return;
+            }
             deletingReportId = id;
             document.getElementById('deleteModal').classList.remove('hidden');
         };
@@ -1478,8 +1884,9 @@
             }
         };
 
-        // 11. ระบบล้างรูปภาพงานเก่าเกิน 90 วัน (3 เดือน) แบบกดตรวจสอบได้ทุกเดือน
+        // 12. ระบบล้างรูปภาพงานเก่าเกิน 90 วัน
         window.openCleanupModal = async () => {
+            if (!canUserDeleteOrManageDb()) return;
             document.getElementById('cleanupModal').classList.remove('hidden');
             const countEl = document.getElementById('cleanupModalCount');
             const btn = document.getElementById('btnConfirmCleanup');
@@ -1508,7 +1915,7 @@
 
                 countEl.innerHTML = eligibleForCleanup.length > 0 
                     ? `พบรายการที่มีรูปเก่าเกิน 90 วัน จำนวน <strong class="text-red-600">${eligibleForCleanup.length}</strong> รายการ`
-                    : `<span class="text-zinc-500"><i class="fa-solid fa-check-circle mr-1"></i>ยอดเยี่ยม! ไม่มีรูปภาพเก่าเกิน 90 วันค้างในระบบ</span>`;
+                    : `<span class="text-zinc-500"><i class="fa-solid fa-check-circle mr-1"></i>ไม่มีรูปภาพเก่าเกิน 90 วันค้างในระบบ</span>`;
 
                 if (eligibleForCleanup.length === 0) {
                     btn.disabled = true;
@@ -1551,7 +1958,7 @@
                     allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
                     renderAllViews();
                 }
-                showToast(`คืนพื้นที่สำเร็จ เคลียร์รูปเก่าเกิน 90 วัน จำนวน ${eligibleForCleanup.length} รายการแล้ว`);
+                showToast(`เคลียร์รูปเก่าเกิน 90 วัน จำนวน ${eligibleForCleanup.length} รายการแล้ว`);
                 window.closeCleanupModal();
             } catch (e) {
                 showToast('เกิดข้อผิดพลาดระหว่างล้างข้อมูล', 'error');
@@ -1581,31 +1988,21 @@
         const lbPercentBadge = document.getElementById('lightboxZoomPercent');
 
         function updateLightboxTransform(smooth = true) {
-            if (smooth) {
-                lbImage.classList.add('zoom-image-smooth');
-            } else {
-                lbImage.classList.remove('zoom-image-smooth');
-            }
+            if (smooth) lbImage.classList.add('zoom-image-smooth');
+            else lbImage.classList.remove('zoom-image-smooth');
             lbImage.style.transform = `translate3d(${lbTranslateX}px, ${lbTranslateY}px, 0) scale(${lbScale})`;
-            if (lbPercentBadge) {
-                lbPercentBadge.textContent = `${Math.round(lbScale * 100)}%`;
-            }
+            if (lbPercentBadge) lbPercentBadge.textContent = `${Math.round(lbScale * 100)}%`;
         }
 
         window.adjustLightboxZoom = (delta) => {
             const nextScale = Math.min(Math.max(1, lbScale + delta), 5);
             lbScale = nextScale;
-            if (lbScale <= 1) {
-                lbTranslateX = 0;
-                lbTranslateY = 0;
-            }
+            if (lbScale <= 1) { lbTranslateX = 0; lbTranslateY = 0; }
             updateLightboxTransform(true);
         };
 
         window.resetLightboxZoom = () => {
-            lbScale = 1;
-            lbTranslateX = 0;
-            lbTranslateY = 0;
+            lbScale = 1; lbTranslateX = 0; lbTranslateY = 0;
             updateLightboxTransform(true);
         };
 
@@ -1636,9 +2033,7 @@
             }
         }
 
-        window.toggleLightboxFullscreen = () => {
-            applyFullscreenUIState(!isLbFullscreen);
-        };
+        window.toggleLightboxFullscreen = () => applyFullscreenUIState(!isLbFullscreen);
 
         window.openLightbox = (id) => {
             const r = allReports.find(x => x.id === id);
@@ -1664,7 +2059,6 @@
             applyFullscreenUIState(false);
         };
 
-        // ระบบ Touch Gestures (Pinch-to-Zoom 2 นิ้ว, Pan 1 นิ้ว และ Double-Tap)
         function getTouchDistance(touches) {
             const dx = touches[0].clientX - touches[1].clientX;
             const dy = touches[0].clientY - touches[1].clientY;
@@ -1679,22 +2073,14 @@
                 initialPinchScale = lbScale;
             } else if (e.touches.length === 1) {
                 const now = Date.now();
-                // ตรวจจับการแตะ 2 ครั้งติดกัน (Double Tap) เพื่อซูมด่วนหรือรีเซ็ต
                 if (now - lastTapTime < 280) {
                     e.preventDefault();
-                    if (lbScale > 1.05) {
-                        window.resetLightboxZoom();
-                    } else {
-                        lbScale = 2.5;
-                        lbTranslateX = 0;
-                        lbTranslateY = 0;
-                        updateLightboxTransform(true);
-                    }
+                    if (lbScale > 1.05) window.resetLightboxZoom();
+                    else { lbScale = 2.5; lbTranslateX = 0; lbTranslateY = 0; updateLightboxTransform(true); }
                     lastTapTime = 0;
                     return;
                 }
                 lastTapTime = now;
-
                 if (lbScale > 1) {
                     isLbDragging = true;
                     lbStartX = e.touches[0].clientX - lbTranslateX;
@@ -1709,10 +2095,7 @@
                 const currentDist = getTouchDistance(e.touches);
                 const ratio = currentDist / initialPinchDistance;
                 lbScale = Math.min(Math.max(1, initialPinchScale * ratio), 5);
-                if (lbScale <= 1) {
-                    lbTranslateX = 0;
-                    lbTranslateY = 0;
-                }
+                if (lbScale <= 1) { lbTranslateX = 0; lbTranslateY = 0; }
                 updateLightboxTransform(false);
             } else if (e.touches.length === 1 && isLbDragging && lbScale > 1) {
                 e.preventDefault();
@@ -1723,18 +2106,13 @@
         }, { passive: false });
 
         lbViewport.addEventListener('touchend', (e) => {
-            if (e.touches.length < 2) {
-                initialPinchDistance = null;
-            }
+            if (e.touches.length < 2) initialPinchDistance = null;
             if (e.touches.length === 0) {
                 isLbDragging = false;
-                if (lbScale <= 1.02) {
-                    window.resetLightboxZoom();
-                }
+                if (lbScale <= 1.02) window.resetLightboxZoom();
             }
         });
 
-        // รองรับการซูมด้วยลูกกลิ้งเมาส์และคลิกลากบนคอมพิวเตอร์ (Desktop Support)
         lbViewport.addEventListener('wheel', (e) => {
             e.preventDefault();
             const delta = e.deltaY < 0 ? 0.25 : -0.25;
@@ -1755,9 +2133,7 @@
             updateLightboxTransform(false);
         });
 
-        window.addEventListener('mouseup', () => {
-            isLbDragging = false;
-        });
+        window.addEventListener('mouseup', () => { isLbDragging = false; });
 
         window.setStatusFilter = (s) => {
             activeStatusFilter = s;
@@ -1779,16 +2155,16 @@
             renderReportList();
         });
 
-        // 12. ข้อมูลจำลอง (รองรับ monthKey ของเดือนที่เลือกอยู่)
+        // 13. ข้อมูลจำลอง
         function getDemoDataForMonth() {
             const now = Date.now();
             return [
                 {
                     location: 'ไฟแสงสว่าง',
-                    subLocation: 'บ้าน 99/158',
-                    reporterName: 'ลูกบ้าน',
-                    description: 'ไฟกิ่งส่องสว่างริมถนนโครงการดับ',
-                    urgency: 'ด่วน',
+                    subLocation: 'บ้าน 99/109',
+                    reporterName: 'รปภ.',
+                    description: 'โคมไฟสูง 3 เมตร แสงสว่างริบหรี่',
+                    urgency: 'ปกติ',
                     status: 'รอซ่อม',
                     techNote: '',
                     imageUrl: DEFAULT_LOCATION_IMAGES['ไฟแสงสว่าง'],
@@ -1799,11 +2175,11 @@
                 {
                     location: 'ฟิตเนส',
                     subLocation: 'คลับเฮาส์',
-                    reporterName: 'รปภ.',
-                    description: 'ลู่วิ่ง Error ไม่สามารถใช้งานได้',
-                    urgency: 'ปกติ',
+                    reporterName: 'ช่างสมชาย (0811112222)',
+                    description: 'ลู่วิ่งไฟฟ้าตัวที่ 2 สายพานมีเสียงดัง',
+                    urgency: 'ด่วน',
                     status: 'กำลังดำเนินการ',
-                    techNote: 'รออะไหล่จากศูนย์บริการ',
+                    techNote: 'กำลังปรับตั้งความตึงสายพาน',
                     imageUrl: DEFAULT_LOCATION_IMAGES['ฟิตเนส'],
                     createdAtMs: now - 7200000,
                     updatedAtMs: now - 3600000,
@@ -1811,12 +2187,12 @@
                 },
                 {
                     location: 'ไฟแสงสว่าง',
-                    subLocation: 'หน้าซอย 4',
-                    reporterName: 'ลูกบ้าน',
-                    description: 'ไฟส่องสว่างทางเข้าโครงการขาด',
+                    subLocation: 'บ้าน 99/158',
+                    reporterName: 'คุณกิตติพงศ์ (0899998888)',
+                    description: 'ไฟกิ่งปากซอย 4 หน้าบ้าน แสงสว่างไม่เพียงพอ',
                     urgency: 'ปกติ',
                     status: 'เสร็จสิ้น',
-                    techNote: 'เปลี่ยนหลอดไฟเรียบร้อยแล้ว',
+                    techNote: 'ช่างเปลี่ยนหลอดใหม่ให้แล้ว',
                     imageUrl: DEFAULT_LOCATION_IMAGES['ไฟแสงสว่าง'],
                     createdAtMs: now - 86400000,
                     updatedAtMs: now - 1200000,
@@ -1857,8 +2233,8 @@
                 return;
             }
             const csv = '\uFEFF' + [
-                'ลำดับ,ประจำเดือน,สถานที่,จุดสังเกต,รายละเอียด,ความด่วน,สถานะ,หมายเหตุช่าง,วันที่แจ้ง',
-                ...allReports.map((r, i) => `${i + 1},"${r.monthKey || selectedMonthKey}","${r.location}","${r.subLocation || ''}","${r.description}","${r.urgency}","${r.status}","${r.techNote || ''}","${formatThaiDateTime(r.createdAtMs)}"`)
+                'ลำดับ,ประจำเดือน,สถานที่,จุดสังเกต,ผู้แจ้ง,รายละเอียด,ความด่วน,สถานะ,หมายเหตุช่าง,วันที่แจ้ง',
+                ...allReports.map((r, i) => `${i + 1},"${r.monthKey || selectedMonthKey}","${r.location}","${r.subLocation || ''}","${r.reporterName || ''}","${r.description}","${r.urgency}","${r.status}","${r.techNote || ''}","${formatThaiDateTime(r.createdAtMs)}"`)
             ].join('\n');
             const link = document.createElement('a');
             link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
