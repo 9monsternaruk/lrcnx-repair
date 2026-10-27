@@ -781,6 +781,52 @@
         </div>
     </div>
 
+    <!-- MODAL 5: แก้ไขข้อมูลการแจ้งซ่อม -->
+    <div id="editDataModal" class="fixed inset-0 z-50 hidden bg-zinc-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full border border-zinc-200 shadow-2xl overflow-hidden animate-[fadeIn_0.15s_ease-out] flex flex-col max-h-[90vh]">
+            <div class="px-5 py-4 bg-zinc-900 text-white flex items-center justify-between flex-shrink-0">
+                <h3 class="text-sm font-bold flex items-center gap-2"><i class="fa-solid fa-pen-to-square"></i><span>แก้ไขรายละเอียดงานซ่อม</span></h3>
+                <button onclick="window.closeEditModal()" class="text-zinc-400 hover:text-white cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 space-y-4 overflow-y-auto flex-1">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">สถานที่เกิดปัญหา</label>
+                    <select id="editReportLocation" class="w-full bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-zinc-900">
+                        <option value="อาคารนิติ">อาคารนิติ (Juristic Office & Clubhouse)</option>
+                        <option value="ซาวน่า">ซาวน่า (Sauna & Steam Room)</option>
+                        <option value="ฟิตเนส">ฟิตเนส (Fitness Center)</option>
+                        <option value="ไฟแสงสว่าง">ไฟแสงสว่าง (Street & Garden Lighting)</option>
+                        <option value="อื่นๆ">อื่นๆ (พื้นที่ส่วนกลาง / ถนนโครงการ / สวน)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">จุดสังเกต / ซอย / บ้านเลขที่</label>
+                    <input type="text" id="editReportSubLocation" class="w-full bg-zinc-50 border border-zinc-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-zinc-900">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">ชื่อผู้แจ้ง / เบอร์ติดต่อ</label>
+                    <input type="text" id="editReporterName" class="w-full bg-zinc-50 border border-zinc-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-zinc-900">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">รายละเอียดปัญหา</label>
+                    <textarea id="editReportDescription" rows="3" class="w-full bg-zinc-50 border border-zinc-300 rounded-xl p-3 text-sm focus:outline-none focus:border-zinc-900 resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-zinc-600 mb-1.5">ระดับความด่วน</label>
+                    <select id="editReportUrgency" class="w-full bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-zinc-900">
+                        <option value="ปกติ">ปกติ (ภายใน 1-3 วัน)</option>
+                        <option value="ด่วน">ด่วน (ภายใน 24 ชม.)</option>
+                        <option value="ด่วนมาก">ด่วนมาก (ตรวจสอบทันที)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="p-4 border-t border-zinc-100 flex items-center gap-2.5 flex-shrink-0 bg-white">
+                <button onclick="window.closeEditModal()" class="flex-1 py-2.5 rounded-xl border border-zinc-300 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 cursor-pointer">ยกเลิก</button>
+                <button onclick="window.confirmEditReport()" id="btnConfirmEdit" class="flex-1 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold cursor-pointer">บันทึกการแก้ไข</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
 
@@ -840,6 +886,7 @@
         let selectedImagePreviewDataUrl = null;
         let editingReportId = null;
         let deletingReportId = null;
+        let editingDataId = null; // State สำหรับการแก้ข้อมูลงานซ่อม
         let eligibleForCleanup = [];
         let unsubscribeFirestore = null;
         let isUsingLocalFallback = false;
@@ -1228,8 +1275,9 @@
                                     <span><i class="fa-regular fa-clock mr-1"></i>${formatThaiDateTime(report.createdAtMs)}</span>
                                 </div>
                                 <div class="flex gap-2">
+                                    <button onclick="window.openEditModal('${report.id}')" class="px-3 py-2 rounded-xl border border-zinc-200 text-zinc-600 hover:bg-zinc-100 cursor-pointer" title="แก้ไขข้อมูล"><i class="fa-solid fa-pen"></i></button>
                                     <button onclick="window.openStatusModal('${report.id}')" class="flex-1 py-2 rounded-xl bg-zinc-900 text-white text-xs font-medium cursor-pointer"><i class="fa-solid fa-arrows-rotate mr-1"></i>อัปเดตสถานะ</button>
-                                    <button onclick="window.openDeleteModal('${report.id}')" class="px-3 py-2 rounded-xl border border-zinc-200 text-zinc-500 hover:bg-red-50 hover:text-red-600 cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+                                    <button onclick="window.openDeleteModal('${report.id}')" class="px-3 py-2 rounded-xl border border-zinc-200 text-zinc-500 hover:bg-red-50 hover:text-red-600 cursor-pointer" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -1279,8 +1327,9 @@
                         <td class="py-3 px-4 text-xs text-zinc-500">${formatThaiDateTime(r.createdAtMs)}</td>
                         <td class="py-3 px-4">${getStatusBadgeHTML(r.status)}</td>
                         <td class="py-3 px-4 text-right">
+                            <button onclick="window.openEditModal('${r.id}')" class="px-2 py-1.5 rounded-lg border text-zinc-600 hover:bg-zinc-100 text-xs mr-1 cursor-pointer" title="แก้ไข"><i class="fa-solid fa-pen"></i></button>
                             <button onclick="window.openStatusModal('${r.id}')" class="px-2 py-1.5 rounded-lg bg-zinc-900 text-white text-[11px] mr-1 cursor-pointer">สถานะ</button>
-                            <button onclick="window.openDeleteModal('${r.id}')" class="px-2 py-1.5 rounded-lg border text-zinc-500 hover:text-red-600 cursor-pointer"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                            <button onclick="window.openDeleteModal('${r.id}')" class="px-2 py-1.5 rounded-lg border text-zinc-500 hover:text-red-600 cursor-pointer" title="ลบ"><i class="fa-solid fa-trash-can text-xs"></i></button>
                         </td>
                     </tr>`;
             }).join('');
@@ -1397,7 +1446,9 @@
             }
         });
 
-        // 10. Modals Logic (Update, Delete, Lightbox, Filter)
+        // 10. Modals Logic (Update, Delete, Edit, Lightbox, Filter)
+        
+        // --- 10.1 อัปเดตสถานะ ---
         window.openStatusModal = (id) => {
             const r = allReports.find(x => x.id === id);
             if (!r) return;
@@ -1447,6 +1498,79 @@
             }
         };
 
+        // --- 10.2 แก้ไขรายละเอียดงานซ่อม ---
+        window.openEditModal = (id) => {
+            const r = allReports.find(x => x.id === id);
+            if (!r) return;
+            editingDataId = id;
+            
+            // นำข้อมูลเดิมไปใส่ในฟอร์มเพื่อแก้ไข
+            document.getElementById('editReportLocation').value = r.location || 'อื่นๆ';
+            document.getElementById('editReportSubLocation').value = r.subLocation || '';
+            document.getElementById('editReporterName').value = r.reporterName || '';
+            document.getElementById('editReportDescription').value = r.description || '';
+            document.getElementById('editReportUrgency').value = r.urgency || 'ปกติ';
+            
+            document.getElementById('editDataModal').classList.remove('hidden');
+        };
+
+        window.closeEditModal = () => {
+            document.getElementById('editDataModal').classList.add('hidden');
+            editingDataId = null;
+        };
+
+        window.confirmEditReport = async () => {
+            if (!editingDataId) return;
+            
+            const location = document.getElementById('editReportLocation').value;
+            const subLocation = document.getElementById('editReportSubLocation').value.trim();
+            const reporterName = document.getElementById('editReporterName').value.trim();
+            const description = document.getElementById('editReportDescription').value.trim();
+            const urgency = document.getElementById('editReportUrgency').value;
+
+            if (!description) {
+                showToast('กรุณาระบุรายละเอียดปัญหา', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnConfirmEdit');
+            btn.disabled = true;
+            btn.textContent = 'กำลังบันทึก...';
+            
+            try {
+                if (!isUsingLocalFallback && !String(editingDataId).startsWith('local-')) {
+                    await updateDoc(doc(db, COLLECTION_NAME, editingDataId), {
+                        location,
+                        subLocation,
+                        reporterName,
+                        description,
+                        urgency,
+                        updatedAtMs: Date.now()
+                    });
+                } else {
+                    const idx = localFallbackStore.findIndex(r => r.id === editingDataId);
+                    if (idx !== -1) {
+                        localFallbackStore[idx].location = location;
+                        localFallbackStore[idx].subLocation = subLocation;
+                        localFallbackStore[idx].reporterName = reporterName;
+                        localFallbackStore[idx].description = description;
+                        localFallbackStore[idx].urgency = urgency;
+                        localFallbackStore[idx].updatedAtMs = Date.now();
+                    }
+                    allReports = localFallbackStore.filter(r => r.monthKey === selectedMonthKey);
+                    renderAllViews();
+                }
+                showToast('แก้ไขข้อมูลสำเร็จ');
+                window.closeEditModal();
+            } catch (e) {
+                showToast('อัปเดตข้อมูลล้มเหลว', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'บันทึกการแก้ไข';
+            }
+        };
+
+        // --- 10.3 ลบข้อมูล ---
         window.openDeleteModal = (id) => {
             deletingReportId = id;
             document.getElementById('deleteModal').classList.remove('hidden');
